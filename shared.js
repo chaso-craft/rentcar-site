@@ -201,36 +201,170 @@ function buildReservationEmailContent(reservation, estimateDocument) {
   return { subject, text, html };
 }
 
+function buildEstimatePdfDocumentHtml(doc) {
+  const company = getCompanyInfo();
+  const booking = {
+    carType: doc.carType,
+    startDate: doc.startAt?.split("T")[0],
+    endDate: doc.endAt?.split("T")[0],
+    startTime: doc.startTimeSelection,
+    endTime: doc.endTimeSelection,
+    options: doc.options
+  };
+  const lineItems = (doc.breakdown || [])
+    .filter((item) => !item.isInfo && !item.isTotal && typeof item.amount === "number")
+    .map(
+      (item) => `
+        <tr>
+          <td style="border:1px solid #cbd5e1;padding:6px 8px;">${escapeHtml(item.label)}</td>
+          <td style="border:1px solid #cbd5e1;padding:6px 8px;text-align:right;white-space:nowrap;">${escapeHtml(formatYen(item.amount))}</td>
+        </tr>`
+    )
+    .join("");
+
+  return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #ffffff;
+      color: #0f172a;
+      font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", Meiryo, sans-serif;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .sheet { padding: 28px; width: 740px; background: #ffffff; }
+    .header { display: flex; justify-content: space-between; gap: 16px; border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 16px; }
+    .company-name { font-size: 16px; font-weight: 700; margin: 0 0 6px; }
+    .meta p { margin: 0 0 4px; color: #334155; }
+    .title { font-size: 22px; letter-spacing: 0.2em; margin: 0 0 8px; text-align: right; }
+    .title-block { text-align: right; }
+    h2 { font-size: 13px; margin: 18px 0 8px; color: #334155; }
+    table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+    th { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; background: #f1f5f9; }
+    .total td { font-weight: 700; background: #f8fafc; border: 1px solid #cbd5e1; padding: 6px 8px; }
+    dl { display: grid; grid-template-columns: 110px 1fr; gap: 4px 10px; margin: 0; }
+    dt { color: #64748b; }
+    dd { margin: 0; }
+    .note { margin-top: 16px; color: #475569; }
+  </style>
+</head>
+<body>
+  <div class="sheet" id="estimate-sheet">
+    <div class="header">
+      <div class="meta">
+        <p class="company-name">${escapeHtml(company.name)}</p>
+        <p>${escapeHtml(company.address)}</p>
+        <p>TEL: ${escapeHtml(company.phone)}</p>
+        <p>営業時間: ${escapeHtml(company.hours)}</p>
+      </div>
+      <div class="title-block">
+        <h1 class="title">見積書</h1>
+        <p>No. ${escapeHtml(doc.documentNumber || "")}</p>
+        <p>発行日: ${escapeHtml(formatDate(doc.issuedAt))}</p>
+      </div>
+    </div>
+
+    <h2>お客様情報</h2>
+    <dl>
+      <dt>お名前</dt><dd>${escapeHtml(doc.customerName || "")}</dd>
+      <dt>電話番号</dt><dd>${escapeHtml(doc.phone || "")}</dd>
+      <dt>メール</dt><dd>${escapeHtml(doc.email || "")}</dd>
+    </dl>
+
+    <h2>ご利用内容</h2>
+    <dl>
+      <dt>車種</dt><dd>${escapeHtml(getCarLabel(doc.carType))}</dd>
+      <dt>レンタル</dt><dd>${escapeHtml(formatBookingEndpointLabel(booking.startDate, booking.startTime, "start"))}</dd>
+      <dt>返却</dt><dd>${escapeHtml(formatBookingEndpointLabel(booking.endDate, booking.endTime, "end"))}</dd>
+      <dt>オプション</dt><dd>${escapeHtml(formatBookingOptionsSummary(doc))}</dd>
+      <dt>お支払い</dt><dd>${escapeHtml(formatPaymentMethodLabel(doc.paymentMethod))}</dd>
+      ${doc.notes ? `<dt>備考</dt><dd>${escapeHtml(doc.notes)}</dd>` : ""}
+    </dl>
+
+    <h2>料金明細（税込）</h2>
+    <table>
+      <thead><tr><th>項目</th><th>金額</th></tr></thead>
+      <tbody>
+        ${lineItems}
+        <tr class="total"><td>合計</td><td style="text-align:right;">${escapeHtml(formatYen(doc.total))}</td></tr>
+      </tbody>
+    </table>
+    <p class="note">本見積書の有効期限は発行日より30日間とします。</p>
+  </div>
+</body>
+</html>`;
+}
+
+function waitForPdfFrameLoad(iframe, timeoutMs = 8000) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("見積書PDFの準備がタイムアウトしました。")), timeoutMs);
+    iframe.onload = () => {
+      clearTimeout(timer);
+      resolve();
+    };
+  });
+}
+
 async function generateEstimatePdfAttachment(estimateDocument) {
   if (typeof html2pdf !== "function") {
     throw new Error("PDF生成ライブラリが読み込まれていません。");
   }
-  const host = document.createElement("div");
-  host.setAttribute("aria-hidden", "true");
-  host.style.cssText =
-    "position:fixed;left:-12000px;top:0;width:794px;background:#fff;padding:24px;z-index:-1;";
-  document.body.appendChild(host);
+
+  const iframe = document.createElement("iframe");
+  iframe.setAttribute("aria-hidden", "true");
+  // 画面外（負の座標）だと html2canvas が真っ白になる端末があるため、透明のまま画面内に置く
+  iframe.style.cssText =
+    "position:fixed;left:0;top:0;width:820px;height:1180px;opacity:0.01;pointer-events:none;border:0;z-index:0;background:#fff;";
+  document.body.appendChild(iframe);
+
   try {
-    renderDocumentSheet(host, estimateDocument);
-    const sheet = host.querySelector(".document-sheet");
+    const html = buildEstimatePdfDocumentHtml(estimateDocument);
+    const loadPromise = waitForPdfFrameLoad(iframe);
+    iframe.srcdoc = html;
+    await loadPromise;
+
+    const frameDoc = iframe.contentDocument;
+    const sheet = frameDoc?.getElementById("estimate-sheet");
     if (!sheet) throw new Error("見積書の描画に失敗しました。");
+
+    if (frameDoc.fonts?.ready) {
+      await frameDoc.fonts.ready;
+    }
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
     const dataUri = await html2pdf()
       .set({
-        margin: [10, 10, 10, 10],
-        image: { type: "jpeg", quality: 0.95 },
-        html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+        margin: [8, 8, 8, 8],
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: "#ffffff",
+          logging: false,
+          windowWidth: sheet.scrollWidth,
+          windowHeight: sheet.scrollHeight
+        },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        pagebreak: { mode: ["css", "legacy"] }
       })
       .from(sheet)
       .outputPdf("datauristring");
+
     const pdfBase64 = String(dataUri || "").split(",")[1] || "";
-    if (!pdfBase64) throw new Error("PDFの生成に失敗しました。");
+    if (!pdfBase64 || pdfBase64.length < 500) {
+      throw new Error("PDFの生成に失敗しました。");
+    }
     return {
       pdfBase64,
       pdfFilename: `見積書_${estimateDocument.documentNumber || "estimate"}.pdf`
     };
   } finally {
-    host.remove();
+    iframe.remove();
   }
 }
 
