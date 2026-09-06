@@ -93,6 +93,12 @@ create policy "app_settings_update_auth"
   using (true)
   with check (true);
 
+drop policy if exists "app_settings_insert_auth" on public.app_settings;
+create policy "app_settings_insert_auth"
+  on public.app_settings for insert
+  to authenticated
+  with check (true);
+
 -- reservations: 予約の新規作成は誰でも / 一覧・更新・削除は管理者のみ
 drop policy if exists "reservations_insert_anon" on public.reservations;
 create policy "reservations_insert_anon"
@@ -146,7 +152,8 @@ create policy "documents_delete_auth"
   using (true);
 
 grant usage on schema public to anon, authenticated;
-grant select, update on public.app_settings to anon, authenticated;
+grant select on public.app_settings to anon, authenticated;
+grant insert, update on public.app_settings to authenticated;
 grant select, insert, update, delete on public.reservations to authenticated;
 grant insert on public.reservations to anon;
 grant select, insert, update, delete on public.documents to authenticated;

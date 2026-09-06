@@ -118,17 +118,28 @@ function isSupabaseConfigured() {
   }
 
   async function ensureSettingsSeed(client, defaults) {
-    const { error } = await client.from("app_settings").upsert(
-      {
-        id: 1,
-        fleet: defaults.fleet,
-        catalog: defaults.catalog,
-        site: defaults.site,
-        rates: defaults.rates,
-        updated_at: new Date().toISOString()
-      },
-      { onConflict: "id", ignoreDuplicates: true }
-    );
+    // 公開ページ（anon）は INSERT できないため、無いときだけ管理者ログイン時にシードする。
+    const { data: existing, error: readError } = await client
+      .from("app_settings")
+      .select("id")
+      .eq("id", 1)
+      .maybeSingle();
+    if (readError) throw readError;
+    if (existing) return;
+
+    const {
+      data: { session }
+    } = await client.auth.getSession();
+    if (!session) return;
+
+    const { error } = await client.from("app_settings").upsert({
+      id: 1,
+      fleet: defaults.fleet,
+      catalog: defaults.catalog,
+      site: defaults.site,
+      rates: defaults.rates,
+      updated_at: new Date().toISOString()
+    });
     if (error) throw error;
   }
 

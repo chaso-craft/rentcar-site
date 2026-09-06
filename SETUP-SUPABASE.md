@@ -20,7 +20,7 @@
 3. プロジェクト内の `supabase-config.js` を開き、次のように貼る  
 
 ```js
-window.RENTCAR_SUPABASE_URL = "https://pppwaaucxkijywlkulj.supabase.co";
+window.RENTCAR_SUPABASE_URL = "https://pppwmaaucxkijywlkulj.supabase.co";
 window.RENTCAR_SUPABASE_ANON_KEY = "ここにanonキー";
 ```
 
@@ -33,9 +33,12 @@ window.RENTCAR_SUPABASE_ANON_KEY = "ここにanonキー";
 1. Supabase 左メニュー **Authentication → Users**  
 2. **Add user** → **Create new user**  
 3. 管理者用のメールとパスワードを設定（例: 店舗用 Gmail）  
-4. このメール／パスワードで `admin.html` にログインします  
+4. **Auto Confirm User** にチェックを入れる（確認メールなしで即ログイン可）  
+5. このメール／パスワードで `admin.html` にログインします  
 
-※ Authentication の「Confirm email」がオンの場合は、確認メールを完了するか、開発中は Confirm email をオフにしてください。
+パスワードを忘れた場合は、同じ画面でユーザーを選び **Send password recovery**、または削除して新規作成してください。
+
+※ Authentication → Providers → Email の「Confirm email」がオンの場合は、確認メールを完了するか、開発中は Confirm email をオフにしてください。
 
 ---
 
