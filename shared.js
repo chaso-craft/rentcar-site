@@ -15,7 +15,37 @@ const DEFAULT_SITE = {
   closed: "なし",
   about:
     "五島列島・福江島を拠点に、観光やお仕事での移動をサポートするレンタカーです。空港・港への乗り捨てにも対応しています。",
-  icon: ""
+  icon: "",
+  emailSubject: "",
+  emailBody: ""
+};
+
+const DEFAULT_EMAIL_TEMPLATE = {
+  subject: "【{{shopName}}】ご予約ありがとうございます（{{carLabel}}）",
+  body: `{{customerName}} 様
+
+この度はご予約いただきありがとうございます。
+予約が完了しました。内容は以下のとおりです。
+
+■ 予約内容
+お名前: {{customerName}}
+電話番号: {{phone}}
+メール: {{email}}
+車種: {{carLabel}}
+レンタル: {{start}}
+返却: {{end}}
+オプション: {{options}}
+お支払い方法: {{paymentMethod}}
+合計（税込）: {{total}}
+見積書番号: {{documentNumber}}
+
+見積書をPDFで添付しております。ご確認ください。
+
+――――――――――――――
+{{shopName}}
+{{shopAddress}}
+TEL: {{shopPhone}}
+営業時間: {{shopHours}}`
 };
 
 const DEFAULT_SITE_ICON =
@@ -101,7 +131,107 @@ function mergeSite(savedSite) {
   if (icon && !(icon.startsWith("data:image/") || icon.startsWith("http://") || icon.startsWith("https://"))) {
     site.icon = "";
   }
+  site.emailSubject = String(site.emailSubject || "");
+  site.emailBody = String(site.emailBody || "");
   return site;
+}
+
+function getEmailTemplate() {
+  const site = getCompanyInfo();
+  return {
+    subject: String(site.emailSubject || "").trim() || DEFAULT_EMAIL_TEMPLATE.subject,
+    body: String(site.emailBody || "").trim() || DEFAULT_EMAIL_TEMPLATE.body
+  };
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function buildEmailPlaceholderMap(reservation, estimateDocument) {
+  const company = getCompanyInfo();
+  const booking = {
+    carType: estimateDocument?.carType || reservation.carType,
+    startDate: (estimateDocument?.startAt || reservation.startAt || "").split("T")[0],
+    endDate: (estimateDocument?.endAt || reservation.endAt || "").split("T")[0],
+    startTime: estimateDocument?.startTimeSelection || reservation.startTimeSelection,
+    endTime: estimateDocument?.endTimeSelection || reservation.endTimeSelection,
+    options: estimateDocument?.options || reservation.options
+  };
+  return {
+    customerName: reservation.customerName || "お客様",
+    phone: reservation.phone || "",
+    email: reservation.email || "",
+    carType: reservation.carType || "",
+    carLabel: getCarLabel(reservation.carType),
+    start: formatBookingEndpointLabel(booking.startDate, booking.startTime, "start"),
+    end: formatBookingEndpointLabel(booking.endDate, booking.endTime, "end"),
+    options: formatBookingOptionsSummary(estimateDocument || reservation),
+    paymentMethod: formatPaymentMethodLabel(reservation.paymentMethod),
+    total: formatYen(estimateDocument?.total ?? reservation.estimatedTotal),
+    documentNumber: estimateDocument?.documentNumber || "",
+    notes: reservation.notes || estimateDocument?.notes || "",
+    shopName: company.name || "",
+    shopAddress: company.address || "",
+    shopPhone: company.phone || "",
+    shopHours: company.hours || ""
+  };
+}
+
+function applyEmailPlaceholders(template, map) {
+  return String(template || "").replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key) =>
+    Object.prototype.hasOwnProperty.call(map, key) ? String(map[key] ?? "") : ""
+  );
+}
+
+function buildReservationEmailContent(reservation, estimateDocument) {
+  const template = getEmailTemplate();
+  const map = buildEmailPlaceholderMap(reservation, estimateDocument);
+  const subject = applyEmailPlaceholders(template.subject, map).replace(/\s+/g, " ").trim();
+  const text = applyEmailPlaceholders(template.body, map).trim();
+  const html = `
+    <div style="font-family:sans-serif;color:#0f172a;line-height:1.7;white-space:pre-wrap;">
+      ${escapeHtml(text)}
+    </div>
+  `;
+  return { subject, text, html };
+}
+
+async function generateEstimatePdfAttachment(estimateDocument) {
+  if (typeof html2pdf !== "function") {
+    throw new Error("PDF生成ライブラリが読み込まれていません。");
+  }
+  const host = document.createElement("div");
+  host.setAttribute("aria-hidden", "true");
+  host.style.cssText =
+    "position:fixed;left:-12000px;top:0;width:794px;background:#fff;padding:24px;z-index:-1;";
+  document.body.appendChild(host);
+  try {
+    renderDocumentSheet(host, estimateDocument);
+    const sheet = host.querySelector(".document-sheet");
+    if (!sheet) throw new Error("見積書の描画に失敗しました。");
+    const dataUri = await html2pdf()
+      .set({
+        margin: [10, 10, 10, 10],
+        image: { type: "jpeg", quality: 0.95 },
+        html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+      })
+      .from(sheet)
+      .outputPdf("datauristring");
+    const pdfBase64 = String(dataUri || "").split(",")[1] || "";
+    if (!pdfBase64) throw new Error("PDFの生成に失敗しました。");
+    return {
+      pdfBase64,
+      pdfFilename: `見積書_${estimateDocument.documentNumber || "estimate"}.pdf`
+    };
+  } finally {
+    host.remove();
+  }
 }
 
 function mergeCatalog(savedCatalog) {

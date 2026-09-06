@@ -1,0 +1,9 @@
+# A string used to distinguish different Supabase projects on the same host.
+project_id = "rentcar-site"
+
+[api]
+enabled = true
+
+[functions.send-confirmation]
+# 予約完了時は未ログインのお客さんが呼ぶため、JWT 検証はオフ
+verify_jwt = false

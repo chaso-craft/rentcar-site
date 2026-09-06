@@ -35,6 +35,9 @@ const siteIconStatus = document.getElementById("siteIconStatus");
 const siteIconInput = document.getElementById("siteIconInput");
 const siteIconReset = document.getElementById("siteIconReset");
 const siteIconMessage = document.getElementById("siteIconMessage");
+const emailTemplateForm = document.getElementById("emailTemplateForm");
+const emailTemplateMessage = document.getElementById("emailTemplateMessage");
+const emailTemplateReset = document.getElementById("emailTemplateReset");
 const passwordForm = document.getElementById("passwordForm");
 const passwordMessage = document.getElementById("passwordMessage");
 
@@ -165,6 +168,15 @@ function fillSettingsForm() {
   setValue("siteAbout", site.about);
 }
 
+function fillEmailTemplateForm() {
+  if (!emailTemplateForm) return;
+  const template = getEmailTemplate();
+  const subjectInput = document.getElementById("emailSubject");
+  const bodyInput = document.getElementById("emailBody");
+  if (subjectInput) subjectInput.value = template.subject || "";
+  if (bodyInput) bodyInput.value = template.body || "";
+}
+
 function fillRatesForm() {
   if (!ratesForm) return;
   const rates = getRentalRates();
@@ -201,6 +213,7 @@ function renderAdminViews() {
   renderDashboard();
   renderFleetForm();
   fillSettingsForm();
+  fillEmailTemplateForm();
   fillRatesForm();
   fillSiteIconPreview();
 }
@@ -915,6 +928,44 @@ if (settingsForm) {
     } catch (error) {
       settingsMessage.textContent = error.message || "保存できませんでした。";
       settingsMessage.style.color = "#dc2626";
+    }
+  });
+}
+
+if (emailTemplateForm) {
+  emailTemplateForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formData = new FormData(emailTemplateForm);
+    const data = loadData();
+    data.site = {
+      ...data.site,
+      emailSubject: String(formData.get("emailSubject") || "").trim(),
+      emailBody: String(formData.get("emailBody") || "").trim()
+    };
+    try {
+      await saveData(data);
+      fillEmailTemplateForm();
+      showActionMessage(emailTemplateMessage, "メール文面を保存しました。次の予約から反映されます。", false);
+    } catch (error) {
+      showActionMessage(emailTemplateMessage, error.message || "保存できませんでした。", true);
+    }
+  });
+}
+
+if (emailTemplateReset) {
+  emailTemplateReset.addEventListener("click", async () => {
+    const data = loadData();
+    data.site = {
+      ...data.site,
+      emailSubject: "",
+      emailBody: ""
+    };
+    try {
+      await saveData(data);
+      fillEmailTemplateForm();
+      showActionMessage(emailTemplateMessage, "初期文面に戻しました。", false);
+    } catch (error) {
+      showActionMessage(emailTemplateMessage, error.message || "初期化できませんでした。", true);
     }
   });
 }

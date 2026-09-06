@@ -320,13 +320,13 @@ function isSupabaseConfigured() {
     return Boolean(session);
   }
 
-  async function sendReservationEmailViaSupabase(reservation, estimateDocument) {
+  async function sendReservationEmailViaSupabase(reservation, estimateDocument, extras = {}) {
     const client = getSupabaseClient();
     if (!client) {
       throw new Error("Supabase が設定されていません。");
     }
     const { data, error } = await client.functions.invoke("send-confirmation", {
-      body: { reservation, estimateDocument }
+      body: { reservation, estimateDocument, ...extras }
     });
     if (error) {
       throw new Error(error.message || "メール送信に失敗しました。");

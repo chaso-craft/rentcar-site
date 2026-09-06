@@ -234,6 +234,39 @@
       </section>
 
       <section class="card">
+        <h2>予約確認メール</h2>
+        <p class="hint-text">予約完了時にお客様へ送るメールの件名・本文を編集できます。空欄のときは初期文面を使います。見積書PDFは自動で添付されます。</p>
+        <p class="hint-text">使える差し込み文字：
+          <code>{{customerName}}</code>
+          <code>{{phone}}</code>
+          <code>{{email}}</code>
+          <code>{{carLabel}}</code>
+          <code>{{start}}</code>
+          <code>{{end}}</code>
+          <code>{{options}}</code>
+          <code>{{paymentMethod}}</code>
+          <code>{{total}}</code>
+          <code>{{documentNumber}}</code>
+          <code>{{notes}}</code>
+          <code>{{shopName}}</code>
+          <code>{{shopAddress}}</code>
+          <code>{{shopPhone}}</code>
+          <code>{{shopHours}}</code>
+        </p>
+        <form id="emailTemplateForm" class="form-grid">
+          <label class="full">件名
+            <input type="text" name="emailSubject" id="emailSubject" placeholder="【{{shopName}}】ご予約ありがとうございます">
+          </label>
+          <label class="full">本文
+            <textarea name="emailBody" id="emailBody" rows="16" placeholder="{{customerName}} 様&#10;&#10;ご予約ありがとうございます。"></textarea>
+          </label>
+          <button type="submit" class="full">メール文面を保存</button>
+          <button type="button" id="emailTemplateReset" class="secondary full">初期文面に戻す</button>
+        </form>
+        <p id="emailTemplateMessage" class="message"></p>
+      </section>
+
+      <section class="card">
         <h2>管理者パスワード</h2>
         <form id="passwordForm" class="form-grid">
           <label>現在のパスワード

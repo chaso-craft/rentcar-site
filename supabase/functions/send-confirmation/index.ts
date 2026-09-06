@@ -10,7 +10,7 @@ function formatYen(amount) {
   return `¥${Number(amount || 0).toLocaleString("ja-JP")}`;
 }
 
-function buildEmail(reservation, estimateDocument) {
+function buildFallbackEmail(reservation, estimateDocument) {
   const name = reservation.customerName || "お客様";
   const docNo = estimateDocument?.documentNumber || "";
   const total = formatYen(estimateDocument?.total ?? reservation.estimatedTotal);
@@ -26,6 +26,8 @@ function buildEmail(reservation, estimateDocument) {
     `見積合計（税込）: ${total}`,
     docNo ? `見積書番号: ${docNo}` : "",
     "",
+    "見積書をPDFで添付しております。ご確認ください。",
+    "",
     "内容の確認・変更は店舗までご連絡ください。",
     "GOTO rental car"
   ]
@@ -33,17 +35,9 @@ function buildEmail(reservation, estimateDocument) {
     .join("\n");
 
   const html = `
-    <p>${name} 様</p>
-    <p>このたびは <strong>GOTO rental car</strong> をご予約いただきありがとうございます。</p>
-    <ul>
-      <li>車種: ${reservation.carType}</li>
-      <li>貸出: ${reservation.startAt}</li>
-      <li>返却: ${reservation.endAt}</li>
-      <li>見積合計（税込）: ${total}</li>
-      ${docNo ? `<li>見積書番号: ${docNo}</li>` : ""}
-    </ul>
-    <p>内容の確認・変更は店舗までご連絡ください。</p>
-    <p>GOTO rental car</p>
+    <div style="font-family:sans-serif;color:#0f172a;line-height:1.7;white-space:pre-wrap;">
+      ${text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}
+    </div>
   `;
 
   return { subject, text, html };
@@ -78,21 +72,40 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { subject, text, html } = buildEmail(reservation, estimateDocument);
+    const fallback = buildFallbackEmail(reservation, estimateDocument);
+    const subject = String(body?.subject || "").trim() || fallback.subject;
+    const text = String(body?.text || "").trim() || fallback.text;
+    const html = String(body?.html || "").trim() || fallback.html;
+    const pdfBase64 = String(body?.pdfBase64 || "").trim();
+    const pdfFilename = String(body?.pdfFilename || "").trim() || "見積書.pdf";
+
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: { user: gmailUser, pass: gmailPass }
     });
 
-    await transporter.sendMail({
+    const mailOptions = {
       from: `GOTO rental car <${gmailUser}>`,
       to,
       subject,
       text,
       html
-    });
+    };
 
-    return new Response(JSON.stringify({ ok: true, to }), {
+    if (pdfBase64) {
+      mailOptions.attachments = [
+        {
+          filename: pdfFilename,
+          content: pdfBase64,
+          encoding: "base64",
+          contentType: "application/pdf"
+        }
+      ];
+    }
+
+    await transporter.sendMail(mailOptions);
+
+    return new Response(JSON.stringify({ ok: true, to, attachedPdf: Boolean(pdfBase64) }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
   } catch (error) {

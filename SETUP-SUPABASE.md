@@ -44,7 +44,7 @@ window.RENTCAR_SUPABASE_ANON_KEY = "ここにanonキー";
 
 ## 4. 予約確認メール（Edge Function）
 
-PDFなしの HTML メールを Gmail から送ります。
+PDF付きの HTML メールを Gmail から送ります。メール文面は管理画面の **店舗設定 → 予約確認メール** から変更できます。
 
 ### 4-1. Supabase CLI（初回だけ）
 
@@ -52,26 +52,40 @@ PDFなしの HTML メールを Gmail から送ります。
 2. PowerShell:
 
 ```powershell
-npm install -g supabase
 cd "C:\Users\mizuk\OneDrive\デスクトップ\カーソル\projects\rentcar-site"
-supabase login
-supabase link --project-ref pppwaaucxkijywlkulj
+npx supabase login
+npx supabase link --project-ref pppwmaaucxkijywlkulj
 ```
 
-### 4-2. シークレット（Gmail）
+### 4-2. Gmail アプリパスワード（必須）
+
+送信専用 Gmail（例: `ailand.510.ai.send@gmail.com`）で:
+
+1. [Google アカウント](https://myaccount.google.com/) → **セキュリティ**
+2. **2段階認証** をオン
+3. [アプリパスワード](https://myaccount.google.com/apppasswords) を作成（メール用）
+4. 表示された **16文字** を控える（通常のログインパスワードは使えません）
+
+### 4-3. シークレット登録
+
+ダッシュボードの Edge Functions → Secrets で次を登録しても構いません。
 
 ```powershell
-supabase secrets set GMAIL_SENDER=送信専用のGmailアドレス
-supabase secrets set GMAIL_APP_PASSWORD=アプリパスワード16文字
+cd "C:\Users\mizuk\OneDrive\デスクトップ\カーソル\projects\rentcar-site"
+npx supabase secrets set GMAIL_SENDER=送信専用のGmailアドレス
+npx supabase secrets set GMAIL_APP_PASSWORD=アプリパスワード16文字
 ```
 
-### 4-3. デプロイ
+### 4-4. デプロイ
 
 ```powershell
-supabase functions deploy send-confirmation --no-verify-jwt
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+npx.cmd supabase functions deploy send-confirmation
 ```
 
-（予約完了時はログインしていないお客さんが呼ぶため `--no-verify-jwt` を付けます）
+（`config.toml` で JWT 検証オフ済み。予約完了時は未ログインのお客さんが呼びます）
+
+関数を更新したあとは、同じデプロイコマンドを再実行してください。
 
 ---
 

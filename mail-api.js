@@ -1,11 +1,34 @@
 async function sendReservationConfirmationEmail(reservation, estimateDocument) {
+  const emailContent =
+    typeof buildReservationEmailContent === "function"
+      ? buildReservationEmailContent(reservation, estimateDocument)
+      : null;
+
+  let pdfAttachment = null;
+  if (typeof generateEstimatePdfAttachment === "function") {
+    try {
+      pdfAttachment = await generateEstimatePdfAttachment(estimateDocument);
+    } catch (error) {
+      console.warn("見積書PDFの生成に失敗しました。本文のみ送信します。", error);
+    }
+  }
+
+  const payloadExtras = {
+    ...(emailContent || {}),
+    ...(pdfAttachment || {})
+  };
+
   if (
     typeof window.isSupabaseConfigured === "function" &&
     window.isSupabaseConfigured() &&
     typeof window.sendReservationEmailViaSupabase === "function"
   ) {
     try {
-      return await window.sendReservationEmailViaSupabase(reservation, estimateDocument);
+      return await window.sendReservationEmailViaSupabase(
+        reservation,
+        estimateDocument,
+        payloadExtras
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (!/Failed to send|FunctionsFetchError|not found|404|Function not found/i.test(message)) {
@@ -38,14 +61,18 @@ async function sendReservationConfirmationEmail(reservation, estimateDocument) {
   }
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 12000);
+  const timeoutId = setTimeout(() => controller.abort(), 45000);
 
   let response;
   try {
     response = await fetch(`${MAIL_API_BASE_URL}/api/reservation/send-confirmation`, {
       method: "POST",
       headers,
-      body: JSON.stringify({ reservation, estimateDocument }),
+      body: JSON.stringify({
+        reservation,
+        estimateDocument,
+        ...payloadExtras
+      }),
       signal: controller.signal
     });
   } catch (error) {
