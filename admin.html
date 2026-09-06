@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>店舗管理 | GOTO rental car</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="./index.html" class="logo">
+        <span class="logo-mark" aria-hidden="true">G</span>
+        <span class="logo-copy">
+          <span class="logo-text">店舗管理</span>
+          <span class="logo-sub" data-company-name>GOTO rental car</span>
+        </span>
+      </a>
+        <button type="button" class="nav-toggle" id="navToggle" aria-label="メニューを開く" aria-expanded="false" aria-controls="siteNav">
+          <span></span><span></span><span></span>
+        </button>
+        <nav class="site-nav" id="siteNav">
+        <a href="./index.html">予約サイトを見る</a>
+        <a href="./admin-documents.html">見積書・領収書</a>
+        <button type="button" id="logoutBtn" class="secondary">ログアウト</button>
+      </nav>
+    </div>
+  </header>
+
+  <section id="loginScreen" class="admin-login-wrap" hidden>
+    <div class="login-card card">
+      <h1>店舗管理ログイン</h1>
+      <p class="hint-text">Supabase に登録した管理者のメールアドレスとパスワードでログインします。</p>
+      <form id="loginForm" class="form-grid">
+        <label class="full">メールアドレス
+          <input type="email" id="loginEmail" name="email" autocomplete="username" required>
+        </label>
+        <label class="full">パスワード
+          <input type="password" id="loginPassword" name="password" autocomplete="current-password" required>
+        </label>
+        <button type="submit" class="full">ログイン</button>
+      </form>
+      <p id="loginMessage" class="message"></p>
+    </div>
+  </section>
+
+  <main id="adminApp" class="container" hidden>
+    <div class="admin-tabs" role="tablist">
+      <button type="button" class="admin-tab is-active" data-tab="dashboard">ダッシュボード</button>
+      <button type="button" class="admin-tab" data-tab="calendar">カレンダー</button>
+      <button type="button" class="admin-tab" data-tab="reservations">予約一覧</button>
+      <button type="button" class="admin-tab" data-tab="fleet">車両管理</button>
+      <button type="button" class="admin-tab" data-tab="rates">料金管理</button>
+      <button type="button" class="admin-tab" data-tab="settings">店舗設定</button>
+    </div>
+
+    <section id="tab-dashboard" class="admin-panel">
+      <section class="card">
+        <h2>本日の状況</h2>
+        <div id="dashboardStats" class="stat-grid"></div>
+      </section>
+      <section class="card">
+        <h2>未読の予約</h2>
+        <ul id="unreadList" class="day-list"></ul>
+      </section>
+    </section>
+
+    <section id="tab-calendar" class="admin-panel" hidden>
+      <section class="card">
+        <h2>予約カレンダー</h2>
+        <div class="toolbar">
+          <button id="prevMonth" type="button">前月</button>
+          <span id="calendarTitle"></span>
+          <button id="nextMonth" type="button">次月</button>
+        </div>
+        <div class="calendar-scroll">
+          <div id="adminCalendar" class="calendar-grid"></div>
+        </div>
+        <div class="calendar-day-lists">
+          <div class="day-list-card">
+            <h3>当日の予約一覧</h3>
+            <ul id="todayReservationList" class="day-list"></ul>
+          </div>
+          <div class="day-list-card">
+            <h3>翌日の予約一覧</h3>
+            <ul id="tomorrowReservationList" class="day-list"></ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>当日・翌日の在庫とスケジュール</h2>
+        <p class="hint-text">24時間を30分単位（48コマ）で表示しています。帯の色は車種ごと、帯内に予約者名を表示します。</p>
+        <div id="todayTomorrowSchedule" class="day-schedule-wrap"></div>
+      </section>
+    </section>
+
+    <section id="tab-reservations" class="admin-panel" hidden>
+      <section class="card">
+        <div class="admin-toolbar-row">
+          <h2>予約一覧</h2>
+          <button id="resetData" type="button" class="danger">予約データを初期化</button>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>受付日時</th>
+                <th>名前</th>
+                <th>車種</th>
+                <th>期間</th>
+                <th>連絡先</th>
+                <th>支払方法</th>
+                <th>支払状況</th>
+                <th>未読/既読</th>
+                <th>状態</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="reservationTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <section id="tab-fleet" class="admin-panel" hidden>
+      <section class="card">
+        <h2>車両・在庫の管理</h2>
+        <p class="hint-text">在庫台数・紹介文・車両の写真は予約サイトにすぐに反映されます。先頭の写真が代表画像になります。</p>
+        <form id="fleetForm" class="form-grid"></form>
+        <p id="fleetMessage" class="message"></p>
+      </section>
+    </section>
+
+    <section id="tab-rates" class="admin-panel" hidden>
+      <section class="card">
+        <h2>料金管理</h2>
+        <p class="hint-text">軽自動車と普通車の貸渡料金（税込・円）を変更できます。予約サイトの料金表と見積もりに反映されます。</p>
+        <form id="ratesForm" class="form-grid">
+          <fieldset class="full rate-fieldset">
+            <legend>軽自動車</legend>
+            <div class="rate-fields">
+              <label>6時間まで
+                <input type="number" id="rate_kei_h6" min="0" step="1" required>
+              </label>
+              <label>12時間まで
+                <input type="number" id="rate_kei_h12" min="0" step="1" required>
+              </label>
+              <label>24時間まで
+                <input type="number" id="rate_kei_h24" min="0" step="1" required>
+              </label>
+              <label>追加1日
+                <input type="number" id="rate_kei_daily" min="0" step="1" required>
+              </label>
+              <label>超過1時間
+                <input type="number" id="rate_kei_hourly" min="0" step="1" required>
+              </label>
+            </div>
+          </fieldset>
+          <fieldset class="full rate-fieldset">
+            <legend>普通車</legend>
+            <div class="rate-fields">
+              <label>6時間まで
+                <input type="number" id="rate_standard_h6" min="0" step="1" required>
+              </label>
+              <label>12時間まで
+                <input type="number" id="rate_standard_h12" min="0" step="1" required>
+              </label>
+              <label>24時間まで
+                <input type="number" id="rate_standard_h24" min="0" step="1" required>
+              </label>
+              <label>追加1日
+                <input type="number" id="rate_standard_daily" min="0" step="1" required>
+              </label>
+              <label>超過1時間
+                <input type="number" id="rate_standard_hourly" min="0" step="1" required>
+              </label>
+            </div>
+          </fieldset>
+          <button type="submit" class="full">料金を保存</button>
+        </form>
+        <p id="ratesMessage" class="message"></p>
+      </section>
+    </section>
+
+    <section id="tab-settings" class="admin-panel" hidden>
+      <section class="card">
+        <h2>店舗情報</h2>
+        <p class="hint-text">予約サイトの店名・住所・紹介文を変更できます。</p>
+        <form id="settingsForm" class="form-grid">
+          <label>店舗名
+            <input type="text" name="siteName" id="siteName" required>
+          </label>
+          <label>キャッチコピー
+            <input type="text" name="tagline" id="siteTagline">
+          </label>
+          <label class="full">住所
+            <input type="text" name="address" id="siteAddress" required>
+          </label>
+          <label>電話番号
+            <input type="text" name="phone" id="sitePhone" required>
+          </label>
+          <label>営業時間
+            <input type="text" name="hours" id="siteHours" required>
+          </label>
+          <label>休業日
+            <input type="text" name="closed" id="siteClosed">
+          </label>
+          <label class="full">紹介文
+            <textarea name="about" id="siteAbout" rows="4"></textarea>
+          </label>
+          <button type="submit" class="full">店舗情報を保存</button>
+        </form>
+        <p id="settingsMessage" class="message"></p>
+      </section>
+
+      <section class="card">
+        <h2>ウェブサイトのアイコン</h2>
+        <p class="hint-text">ブラウザのタブとサイト上部のマークに使われます。まだ設定していないときは、現在使われているアイコンを表示します。</p>
+        <div class="site-icon-preview-wrap">
+          <img id="siteIconPreview" class="site-icon-preview" alt="現在のウェブサイトアイコン">
+          <div class="site-icon-controls">
+            <p id="siteIconStatus" class="hint-text"></p>
+            <label class="file-button">画像を選んで変更
+              <input type="file" id="siteIconInput" accept="image/*">
+            </label>
+            <button type="button" id="siteIconReset" class="secondary">初期アイコンに戻す</button>
+          </div>
+        </div>
+        <p id="siteIconMessage" class="message"></p>
+      </section>
+
+      <section class="card">
+        <h2>管理者パスワード</h2>
+        <form id="passwordForm" class="form-grid">
+          <label>現在のパスワード
+            <input type="password" name="currentPassword" required>
+          </label>
+          <label>新しいパスワード
+            <input type="password" name="newPassword" required minlength="4">
+          </label>
+          <button type="submit" class="full">パスワードを変更</button>
+        </form>
+        <p id="passwordMessage" class="message"></p>
+      </section>
+    </section>
+  </main>
+
+  <div id="calendarDetailModal" class="modal" hidden>
+    <div class="modal-backdrop" data-close-modal></div>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="calendarModalTitle">
+      <div class="modal-header">
+        <h3 id="calendarModalTitle" class="modal-title">予約の詳細</h3>
+        <button type="button" class="modal-close" data-close-modal aria-label="閉じる">×</button>
+      </div>
+      <div id="calendarModalBody" class="modal-body"></div>
+      <div class="modal-footer">
+        <button type="button" id="calendarModalToggleRead" class="secondary" hidden>既読にする</button>
+        <button type="button" data-close-modal>閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./supabase-config.js"></script>
+  <script src="./shared.js"></script>
+  <script src="./supabase-data.js"></script>
+  <script src="./site-ui.js"></script>
+  <script src="./admin.js"></script>
+</body>
+</html>

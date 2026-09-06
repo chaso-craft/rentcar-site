@@ -1,0 +1,9 @@
+server/
+deploy/
+scripts/
+node_modules/
+.env
+*.md
+!DEPLOY-NETLIFY.md
+セットアップ手順.txt
+.git/

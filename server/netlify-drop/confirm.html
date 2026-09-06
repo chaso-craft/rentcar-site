@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>予約内容の確認 | レンタカー予約サイト</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="header">
+    <h1>レンタカー予約サイト</h1>
+    <nav>
+      <a href="./index.html">トップへ戻る</a>
+      <a href="./admin.html">管理者サイトへ</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <p class="page-back-row">
+      <a id="backToPrevPageLink" class="back-page-link" href="#">← 前のページに戻る</a>
+    </p>
+
+    <section class="card">
+      <h2>予約内容の確認</h2>
+      <p class="hint-text">内容をご確認ください。問題なければ、キャンセルポリシーへの同意とお支払い方法の選択を行ってください。</p>
+
+      <h3 class="confirm-section-title">予約内容</h3>
+      <dl id="bookingSummary" class="confirm-summary"></dl>
+
+      <h3 class="confirm-section-title">お客様情報</h3>
+      <dl id="customerSummary" class="confirm-summary"></dl>
+
+      <h3 class="confirm-section-title">料金</h3>
+      <div class="price-summary-row">
+        <p id="priceTotalDisplay" class="price-total-display"></p>
+        <button type="button" id="priceBreakdownBtn" class="secondary">内訳を確認</button>
+      </div>
+      <p class="hint-text price-tax-note">表示料金は税込です。営業時間前・営業時間後を選んだ場合は、営業時間外オプション代（各¥2,000）を含みます。</p>
+
+      <p class="confirm-edit-link">
+        <a id="backToEditLink" href="#">入力内容を修正する</a>
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>キャンセルポリシー</h2>
+      <p class="hint-text">キャンセルポリシーを下までスクロールしてお読みください。最後まで読むと「規約に同意する」ボタンが押せます。</p>
+
+      <div id="termsScroll" class="terms-scroll-box" tabindex="0" aria-label="キャンセルポリシー">
+        <div id="termsContent" class="terms-content">
+          <h3>GOTO rental car キャンセルポリシー</h3>
+
+          <p>数あるレンタカー店の中から GOTO rental car（以下「当店」という）をご利用いただきまして、誠にありがとうございます。</p>
+          <p>当店は、お客様が安心してサービスを利用できるよう、cancel policy を定めております。以下の通り、予約の取り消しや変更に関する規定を定めているため、事前にご一読ください。</p>
+
+          <h4>第1条（目的）</h4>
+          <p>本規定は、当店とお客様との間の予約に関し、予約の変更および取消に伴う条件を明確に規定することを目的とします。お客様の予約が完了した時点で、本規定の全ての内容に同意したものとみなします。</p>
+
+          <h4>第2条（予約取消手数料）</h4>
+          <p>予約取消手数料は以下の通りとします。</p>
+          <table class="terms-table">
+            <thead>
+              <tr>
+                <th scope="col">期日</th>
+                <th scope="col">取消手数料</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>予約乗車日の7日前</td>
+                <td>無料</td>
+              </tr>
+              <tr>
+                <td>予約乗車日の6〜4日前</td>
+                <td>基本料金の20％</td>
+              </tr>
+              <tr>
+                <td>予約乗車日の3〜2日前</td>
+                <td>基本料金の30％</td>
+              </tr>
+              <tr>
+                <td>予約乗車日の1日前</td>
+                <td>基本料金の50％</td>
+              </tr>
+              <tr>
+                <td>予約乗車日の当日</td>
+                <td>基本料金の100％</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h4>第3条（予約の変更）</h4>
+          <p>予約内容（車種・日時・オプション等）の変更の必要性が生じた場合、変更手数料が発生する場合がございます。速やかに当店へご連絡ください。</p>
+          <table class="terms-table">
+            <thead>
+              <tr>
+                <th scope="col">期日</th>
+                <th scope="col">変更手数料</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>予約乗車日の7日前</td>
+                <td>無料</td>
+              </tr>
+              <tr>
+                <td>予約乗車日の6〜3日前</td>
+                <td>基本料金の20％</td>
+              </tr>
+              <tr>
+                <td>予約乗車日の2〜1日前</td>
+                <td>基本料金の30％</td>
+              </tr>
+              <tr>
+                <td>予約乗車日の1日前</td>
+                <td>基本料金の50％</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>空車状況によりご希望に添えない場合もございますので、予めご了承ください。</p>
+
+          <h4>第4条（予約の自動取消）</h4>
+          <p>ご予約の時間を1時間以上経過しても、当店まで電話または LINE にて連絡がない場合は、予約を取り消されたものとみなします。この場合、第2条に定める予約手数料に基づき、基本料金の100％の金額を請求致します。到着が遅れる場合は、必ずお電話または LINE にてご連絡をお願い致します。</p>
+
+          <h4>第5条（予約の解除・拒否）</h4>
+          <p>以下の場合、当店は予約の解除または拒否を催告なく実行できるものとします。この場合、取消手数料は発生せず、また、当店は損害賠償義務を負いません。</p>
+          <ol class="terms-list">
+            <li>予約時の必要情報に虚偽がある場合</li>
+            <li>過去に無断キャンセルや迷惑行為があった場合</li>
+            <li>お客様が反社会的勢力に該当すると判断される場合</li>
+          </ol>
+
+          <h4>第6条（不可抗力免責）</h4>
+          <p>台風や波浪等の悪天候や自然災害等により、当店までの公共交通機関（飛行機・船等）が欠航となり、物理的にご来店が不可能な場合は、予約取消手数料は発生しません。その際は、欠航が確定した時点でお早めのご連絡をお願い致します。</p>
+          <p>欠航の際は、欠航証明書の提示を求める場合があります。</p>
+
+          <h4>第7条（返金の手続き）</h4>
+          <p>不可抗力免責に該当する事象が発生した場合は、当店は以下の方法で返金を行います。</p>
+          <ul class="terms-list">
+            <li>クレジットカード：株式会社 Recruit の Air Pay の規定に基づき返金の処理を行います。</li>
+            <li>現金：銀行振込にて対応いたしますが、振込手数料はお客様のご負担とさせていただきます。</li>
+          </ul>
+
+          <h4>お問い合わせ先</h4>
+          <p>cancel policy に関するお問い合わせは、以下の連絡先までお願いいたします。</p>
+          <dl class="terms-contact">
+            <dt>名称</dt>
+            <dd>GOTO rental car</dd>
+            <dt>住所</dt>
+            <dd>長崎県五島市上大津町324</dd>
+            <dt>営業時間</dt>
+            <dd>9:00〜18:00</dd>
+            <dt>休業日</dt>
+            <dd>なし</dd>
+            <dt>電話番号</dt>
+            <dd>090-1164-2562</dd>
+          </dl>
+
+          <p class="terms-end-marker">— 以上 —</p>
+        </div>
+      </div>
+
+      <div class="terms-agree-row">
+        <button type="button" id="termsAgreeBtn" class="secondary" disabled>規約に同意する</button>
+        <span id="termsAgreedIndicator" class="terms-agreed-indicator" hidden aria-live="polite">
+          <span class="terms-check-icon" aria-hidden="true">✓</span>
+          規約に同意しました
+        </span>
+      </div>
+    </section>
+
+    <section class="card" id="paymentSection">
+      <h2>お支払い方法</h2>
+      <p class="hint-text">キャンセルポリシーに同意のうえ、お支払い方法を選択してください。</p>
+      <fieldset class="payment-method-group">
+        <legend class="visually-hidden">お支払い方法</legend>
+        <label class="option-check"><input type="radio" name="paymentMethod" value="onSite"> 現地支払い</label>
+        <label class="option-check"><input type="radio" name="paymentMethod" value="bankTransfer"> 銀行振り込み</label>
+        <label class="option-check"><input type="radio" name="paymentMethod" value="airPay"> Air Pay</label>
+      </fieldset>
+      <p id="paymentMethodMessage" class="message"></p>
+    </section>
+
+    <section class="card">
+      <button type="button" id="confirmSubmitBtn" class="full" disabled>予約を確定する</button>
+      <p id="message" class="message"></p>
+    </section>
+  </main>
+
+  <div id="priceBreakdownModal" class="modal" hidden>
+    <div class="modal-backdrop" data-close-price-modal></div>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="priceModalTitle">
+      <div class="modal-header">
+        <h3 id="priceModalTitle" class="modal-title">料金の内訳</h3>
+        <button type="button" class="modal-close" data-close-price-modal aria-label="閉じる">×</button>
+      </div>
+      <div id="priceBreakdownBody" class="modal-body"></div>
+      <div class="modal-footer">
+        <button type="button" data-close-price-modal>閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="./shared.js"></script>
+  <script src="./site-config.js"></script>
+  <script src="./mail-api.js"></script>
+  <script src="./confirm.js"></script>
+</body>
+</html>

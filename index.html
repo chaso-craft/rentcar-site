@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="五島・福江島のレンタカー GOTO rental car。空き状況検索からそのまま予約できます。">
+  <title>GOTO rental car | 五島のレンタカー予約</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body class="public-body">
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="./index.html" class="logo">
+        <span class="logo-mark" aria-hidden="true">G</span>
+        <span class="logo-copy">
+          <span class="logo-text" data-company-name>GOTO rental car</span>
+          <span class="logo-sub">五島のレンタカー</span>
+        </span>
+      </a>
+        <button type="button" class="nav-toggle" id="navToggle" aria-label="メニューを開く" aria-expanded="false" aria-controls="siteNav">
+          <span></span><span></span><span></span>
+        </button>
+        <nav class="site-nav" id="siteNav">
+        <a href="#reserve">予約</a>
+        <a href="#cars">車種</a>
+        <a href="#rates">料金</a>
+        <a href="#shop">店舗情報</a>
+        <a href="./admin.html" class="nav-admin">店舗管理</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" id="reserve">
+      <div class="hero-inner">
+        <p class="hero-kicker">Fukue Island / Goto</p>
+        <h1 class="hero-title" data-company-tagline>五島で、気ままに走る。</h1>
+        <p class="hero-lead">福江空港・福江港からの乗り捨てにも対応。日付を選んで空き状況を確認し、そのまま予約できます。</p>
+
+        <form id="searchForm" class="search-panel">
+          <h2 class="search-panel-title">空き状況検索</h2>
+          <div class="search-grid">
+            <label class="date-field">
+              <span class="date-field-label">貸出日</span>
+              <p class="hint-text date-touch-hint">タップして日付を選んでください</p>
+              <div class="date-picker-row">
+                <input type="date" id="startDateInput" name="startDate" required class="native-date-input" aria-label="貸出日">
+                <button type="button" id="startDatePickerButton" class="secondary date-picker-btn">日付を選ぶ</button>
+              </div>
+            </label>
+            <label>貸出時間（9:00〜18:00 / 30分刻み）
+              <select name="startTime" id="startTime" required></select>
+            </label>
+            <label class="date-field">
+              <span class="date-field-label">返却日</span>
+              <p class="hint-text date-touch-hint">タップして日付を選んでください</p>
+              <div class="date-picker-row">
+                <input type="date" id="endDateInput" name="endDate" required class="native-date-input" aria-label="返却日">
+                <button type="button" id="endDatePickerButton" class="secondary date-picker-btn">日付を選ぶ</button>
+              </div>
+            </label>
+            <label>返却時間（9:00〜18:00 / 30分刻み）
+              <select name="endTime" id="endTime" required></select>
+            </label>
+            <p class="hint-text full same-day-time-note">予約開始は現在時刻の1時間後以降（30分刻み）のみ選べます。営業時間前・後の受け渡しはオプション料金がかかります。</p>
+            <button type="submit" class="full search-submit">空き状況を見る</button>
+          </div>
+          <p id="searchMessage" class="message"></p>
+        </form>
+      </div>
+    </section>
+
+    <section class="section" id="results">
+      <div class="container">
+        <div class="section-header">
+          <h2>空いている車種</h2>
+          <p id="carListHint" class="section-sub">日付と時間を選んで検索すると、予約できる車種が表示されます。</p>
+        </div>
+        <div id="carTypeList" class="car-type-grid"></div>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="cars">
+      <div class="container">
+        <div class="section-header">
+          <h2>取り扱い車種</h2>
+          <p class="section-sub">在庫は管理画面から変更できます。予約は上の検索から進めてください。</p>
+        </div>
+        <div id="fleetShowcase" class="fleet-showcase"></div>
+      </div>
+    </section>
+
+    <section class="section" id="rates">
+      <div class="container">
+        <div class="section-header">
+          <h2>料金案内（税込）</h2>
+          <p class="section-sub">2026年4月15日改訂。営業時間外の受け渡しは各 ¥2,000 です。</p>
+        </div>
+        <div class="table-scroll">
+          <table class="rates-table">
+            <thead>
+              <tr>
+                <th>区分</th>
+                <th>6時間まで</th>
+                <th>12時間まで</th>
+                <th>24時間まで</th>
+                <th>追加1日</th>
+                <th>超過1時間</th>
+              </tr>
+            </thead>
+            <tbody id="ratesTableBody">
+              <tr>
+                <td>軽自動車</td>
+                <td>¥4,950</td>
+                <td>¥5,500</td>
+                <td>¥6,600</td>
+                <td>¥5,500</td>
+                <td>¥1,100</td>
+              </tr>
+              <tr>
+                <td>普通車</td>
+                <td>¥5,500</td>
+                <td>¥6,600</td>
+                <td>¥7,700</td>
+                <td>¥6,600</td>
+                <td>¥1,100</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <ul class="rate-notes">
+          <li>チャイルドシート類：各 ¥1,000</li>
+          <li>スタッドレスタイヤ：¥2,000</li>
+          <li>福江空港・福江港への乗り捨て：各 ¥500</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="shop">
+      <div class="container shop-grid">
+        <div>
+          <div class="section-header">
+            <h2>店舗情報</h2>
+          </div>
+          <p class="shop-about" data-company-about></p>
+          <dl class="shop-dl">
+            <dt>店舗名</dt>
+            <dd data-company-name>GOTO rental car</dd>
+            <dt>住所</dt>
+            <dd data-company-address>長崎県五島市上大津町324</dd>
+            <dt>電話</dt>
+            <dd><a data-company-tel href="tel:09011642562"><span data-company-phone>090-1164-2562</span></a></dd>
+            <dt>営業時間</dt>
+            <dd data-company-hours>9:00〜18:00</dd>
+            <dt>休業日</dt>
+            <dd data-company-closed>なし</dd>
+          </dl>
+        </div>
+        <div class="shop-card">
+          <h3>ご利用の流れ</h3>
+          <ol class="flow-list">
+            <li>貸出・返却の日時を検索する</li>
+            <li>空いている車種を選ぶ</li>
+            <li>オプションとお客様情報を入力する</li>
+            <li>規約に同意して予約を確定する</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="header-inner footer-inner">
+      <p><span data-company-name>GOTO rental car</span> — 長崎県五島市</p>
+      <a href="./admin.html" class="footer-admin">店舗管理</a>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./supabase-config.js"></script>
+  <script src="./shared.js"></script>
+  <script src="./supabase-data.js"></script>
+  <script src="./site-ui.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>

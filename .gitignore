@@ -1,0 +1,21 @@
+# Dependencies
+server/node_modules/
+node_modules/
+
+# Secrets
+server/.env
+.env
+.env.*
+
+# Local / deploy copies (optional; source of truth is project root)
+deploy/netlify-drop/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
+
+# Supabase CLI local
+supabase/.temp/

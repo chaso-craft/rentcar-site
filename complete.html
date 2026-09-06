@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>予約申し込み完了 | GOTO rental car</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body class="public-body">
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="./index.html" class="logo">
+        <span class="logo-mark" aria-hidden="true">G</span>
+        <span class="logo-copy">
+          <span class="logo-text" data-company-name>GOTO rental car</span>
+          <span class="logo-sub">五島のレンタカー</span>
+        </span>
+      </a>
+        <button type="button" class="nav-toggle" id="navToggle" aria-label="メニューを開く" aria-expanded="false" aria-controls="siteNav">
+          <span></span><span></span><span></span>
+        </button>
+        <nav class="site-nav" id="siteNav">
+        <a href="./index.html">トップへ戻る</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container page-main">
+    <section class="card complete-card">
+      <div class="complete-status">
+        <span class="complete-check-icon" aria-hidden="true">✓</span>
+        <h2>予約申し込み完了</h2>
+      </div>
+
+      <div id="completeMessage" class="complete-message"></div>
+
+      <a id="backToTopBtn" href="./index.html" class="complete-top-link">トップページに戻る</a>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="header-inner footer-inner">
+      <p><span data-company-name>GOTO rental car</span></p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./supabase-config.js"></script>
+  <script src="./shared.js"></script>
+  <script src="./supabase-data.js"></script>
+  <script src="./site-ui.js"></script>
+  <script src="./complete.js"></script>
+</body>
+</html>

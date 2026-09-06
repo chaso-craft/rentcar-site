@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理者サイト | レンタカー</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="header">
+    <h1>管理者サイト</h1>
+    <nav>
+      <a href="./index.html">予約サイトへ</a>
+      <a href="./admin-documents.html">見積書・領収書</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2>予約カレンダー</h2>
+      <div class="toolbar">
+        <button id="prevMonth" type="button">前月</button>
+        <span id="calendarTitle"></span>
+        <button id="nextMonth" type="button">次月</button>
+      </div>
+      <div id="adminCalendar" class="calendar-grid"></div>
+      <div class="calendar-day-lists">
+        <div class="day-list-card">
+          <h3>当日の予約一覧</h3>
+          <ul id="todayReservationList" class="day-list"></ul>
+        </div>
+        <div class="day-list-card">
+          <h3>翌日の予約一覧</h3>
+          <ul id="tomorrowReservationList" class="day-list"></ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>当日・翌日の在庫とスケジュール</h2>
+      <p class="hint-text">24時間を30分単位（48コマ）で表示しています。帯の色は車種ごと、帯内に予約者名を表示します。</p>
+      <div id="todayTomorrowSchedule" class="day-schedule-wrap"></div>
+    </section>
+
+    <section class="card">
+      <h2>予約一覧</h2>
+      <div class="toolbar">
+        <button id="resetData" type="button" class="danger">データ初期化</button>
+      </div>
+      <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>受付日時</th>
+            <th>名前</th>
+            <th>車種</th>
+            <th>期間</th>
+            <th>連絡先</th>
+            <th>支払方法</th>
+            <th>支払状況</th>
+            <th>未読/既読</th>
+            <th>状態</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="reservationTableBody"></tbody>
+      </table>
+      </div>
+    </section>
+  </main>
+
+  <div id="calendarDetailModal" class="modal" hidden>
+    <div class="modal-backdrop" data-close-modal></div>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="calendarModalTitle">
+      <div class="modal-header">
+        <h3 id="calendarModalTitle" class="modal-title">予約の詳細</h3>
+        <button type="button" class="modal-close" data-close-modal aria-label="閉じる">×</button>
+      </div>
+      <div id="calendarModalBody" class="modal-body"></div>
+      <div class="modal-footer">
+        <button type="button" id="calendarModalToggleRead" class="secondary" hidden>既読にする</button>
+        <button type="button" data-close-modal>閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="./shared.js"></script>
+  <script src="./admin.js"></script>
+</body>
+</html>

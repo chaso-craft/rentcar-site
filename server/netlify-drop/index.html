@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>レンタカー予約サイト</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="header">
+    <h1>レンタカー予約サイト</h1>
+    <nav>
+      <a href="./admin.html">管理者サイトへ</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2>空き状況検索</h2>
+      <form id="searchForm" class="form-grid">
+        <label>予約開始日
+          <input type="date" id="startDateInput" name="startDate" required class="native-date-input">
+          <div class="date-picker-row">
+            <input type="text" id="startDateDisplayInput" class="date-display-input" value="未選択" readonly>
+            <button type="button" id="startDatePickerButton" class="secondary">カレンダーで選択</button>
+          </div>
+        </label>
+        <label>予約開始時間（9:00〜18:00 / 30分刻み・営業時間前/後可）
+          <select name="startTime" id="startTime" required></select>
+        </label>
+        <label>返却日
+          <input type="date" id="endDateInput" name="endDate" required class="native-date-input">
+          <div class="date-picker-row">
+            <input type="text" id="endDateDisplayInput" class="date-display-input" value="未選択" readonly>
+            <button type="button" id="endDatePickerButton" class="secondary">カレンダーで選択</button>
+          </div>
+        </label>
+        <label>返却時間（9:00〜18:00 / 30分刻み・営業時間前/後可）
+          <select name="endTime" id="endTime" required></select>
+        </label>
+        <p class="hint-text full same-day-time-note">同日返却の場合、返却時間はレンタル開始より後のみ選べます。</p>
+        <button type="submit" class="full">空き状況検索</button>
+      </form>
+      <p id="searchMessage" class="message"></p>
+    </section>
+
+    <section class="card">
+      <h2>車種一覧</h2>
+      <p id="carListHint" class="hint-text">日付・時間を選んで「空き状況検索」を押すと、空いている車種を選べます。</p>
+      <div id="carTypeList" class="car-type-grid"></div>
+    </section>
+  </main>
+
+  <script src="./shared.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>車種の詳細 | GOTO rental car</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body class="public-body">
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="./index.html" class="logo">
+        <span class="logo-mark" aria-hidden="true">G</span>
+        <span class="logo-copy">
+          <span class="logo-text" data-company-name>GOTO rental car</span>
+          <span class="logo-sub">五島のレンタカー</span>
+        </span>
+      </a>
+        <button type="button" class="nav-toggle" id="navToggle" aria-label="メニューを開く" aria-expanded="false" aria-controls="siteNav">
+          <span></span><span></span><span></span>
+        </button>
+        <nav class="site-nav" id="siteNav">
+        <a href="./index.html#reserve">予約</a>
+        <a href="./index.html#cars">車種</a>
+        <a href="./index.html#rates">料金</a>
+        <a href="./index.html#shop">店舗情報</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container page-main">
+    <p class="page-back-row">
+      <a id="backToPrevPageLink" class="back-page-link" href="./index.html">← 検索結果に戻る</a>
+    </p>
+
+    <section class="card">
+      <p class="page-label">車種詳細</p>
+      <h2 id="carTypeTitle" class="car-detail-title"></h2>
+      <div id="carPhotoGallery" class="car-photo-gallery"></div>
+      <p id="carTypeIntro" class="car-detail-intro"></p>
+      <dl id="rentalSummary" class="rental-summary"></dl>
+      <button type="button" id="rentButton" class="full">この車をレンタルする</button>
+    </section>
+
+    <section id="customerInfoSection" class="card" hidden>
+      <h2>オプション・お客様情報</h2>
+      <p class="hint-text">必要なオプションを選び、基本情報を入力して「予約内容の確認」へ進んでください。</p>
+      <form id="reservationForm" class="form-grid">
+        <input type="hidden" name="carType" id="hiddenCarType">
+        <input type="hidden" name="startDate" id="hiddenStartDate">
+        <input type="hidden" name="startTime" id="hiddenStartTime">
+        <input type="hidden" name="endDate" id="hiddenEndDate">
+        <input type="hidden" name="endTime" id="hiddenEndTime">
+
+        <div class="options-section full">
+          <h3 class="options-section-title">オプション選択</h3>
+
+          <fieldset class="option-group">
+            <legend>チャイルドシート類（各¥1,000）</legend>
+            <label class="option-check"><input type="checkbox" name="option_babySeat"> ベビーシート（¥1,000）</label>
+            <label class="option-check"><input type="checkbox" name="option_childSeat"> チャイルドシート（¥1,000）</label>
+            <label class="option-check"><input type="checkbox" name="option_juniorSeat"> ジュニアシート（¥1,000）</label>
+          </fieldset>
+
+          <fieldset class="option-group">
+            <legend>タイヤ</legend>
+            <label class="option-check"><input type="checkbox" name="option_studlessTire"> スタッドレスタイヤ（¥2,000）</label>
+          </fieldset>
+
+          <fieldset class="option-group">
+            <legend>乗り捨て</legend>
+            <label class="option-check"><input type="radio" name="option_dropOff" value="none" checked> 乗り捨てなし</label>
+            <label class="option-check"><input type="radio" name="option_dropOff" value="fukueAirport"> 福江空港（¥500）</label>
+            <label class="option-check"><input type="radio" name="option_dropOff" value="fukuePort"> 福江港（¥500）</label>
+            <label class="option-check"><input type="radio" name="option_dropOff" value="otherDistance"> その他（10kmごと・当日現地で距離計算・事前支払い）（¥0）</label>
+          </fieldset>
+
+          <p id="optionsPricePreview" class="options-price-preview"></p>
+        </div>
+
+        <h3 class="options-section-title full">お客様情報</h3>
+        <label>お名前
+          <input type="text" name="customerName" required>
+        </label>
+        <label>電話番号
+          <div class="phone-input-row">
+            <select name="phoneCountryCode" id="phoneCountryCode" required aria-label="国番号"></select>
+            <input type="tel" name="phone" placeholder="090-1234-5678" required autocomplete="tel-national" inputmode="tel">
+          </div>
+        </label>
+        <label class="full">メールアドレス
+          <input type="email" name="email" required>
+        </label>
+        <label class="full">備考
+          <textarea name="notes" rows="3" placeholder="家族5名で利用予定など"></textarea>
+        </label>
+        <button type="submit" class="full">予約内容の確認</button>
+      </form>
+      <p id="message" class="message"></p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="header-inner footer-inner">
+      <p><span data-company-name>GOTO rental car</span></p>
+      <a href="./index.html" class="footer-admin">トップへ戻る</a>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./supabase-config.js"></script>
+  <script src="./shared.js"></script>
+  <script src="./supabase-data.js"></script>
+  <script src="./site-ui.js"></script>
+  <script src="./car-detail.js"></script>
+</body>
+</html>

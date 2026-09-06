@@ -1,0 +1,9 @@
+# Netlify 公開設定（サイト本体のみ・静的ファイル）
+[build]
+  publish = "."
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"

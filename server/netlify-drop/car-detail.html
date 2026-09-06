@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>車種紹介 | レンタカー予約サイト</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="header">
+    <h1>レンタカー予約サイト</h1>
+    <nav>
+      <a href="./index.html">トップへ戻る</a>
+      <a href="./admin.html">管理者サイトへ</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <p class="page-back-row">
+      <a id="backToPrevPageLink" class="back-page-link" href="./index.html">← 前のページに戻る</a>
+    </p>
+
+    <section class="card">
+      <p class="page-label">車種紹介ページ（仮）</p>
+      <h2 id="carTypeTitle" class="car-detail-title"></h2>
+      <p id="carTypeIntro" class="car-detail-intro"></p>
+      <dl id="rentalSummary" class="rental-summary"></dl>
+      <button type="button" id="rentButton" class="full">レンタルする</button>
+    </section>
+
+    <section id="customerInfoSection" class="card" hidden>
+      <h2>オプション・お客様情報</h2>
+      <p class="hint-text">必要なオプションを選び、基本情報を入力して「予約内容の確認」へ進んでください。</p>
+      <form id="reservationForm" class="form-grid">
+        <input type="hidden" name="carType" id="hiddenCarType">
+        <input type="hidden" name="startDate" id="hiddenStartDate">
+        <input type="hidden" name="startTime" id="hiddenStartTime">
+        <input type="hidden" name="endDate" id="hiddenEndDate">
+        <input type="hidden" name="endTime" id="hiddenEndTime">
+
+        <div class="options-section full">
+          <h3 class="options-section-title">オプション選択</h3>
+
+          <fieldset class="option-group">
+            <legend>チャイルドシート類（各¥1,000）</legend>
+            <label class="option-check"><input type="checkbox" name="option_babySeat"> ベビーシート（¥1,000）</label>
+            <label class="option-check"><input type="checkbox" name="option_childSeat"> チャイルドシート（¥1,000）</label>
+            <label class="option-check"><input type="checkbox" name="option_juniorSeat"> ジュニアシート（¥1,000）</label>
+          </fieldset>
+
+          <fieldset class="option-group">
+            <legend>タイヤ</legend>
+            <label class="option-check"><input type="checkbox" name="option_studlessTire"> スタッドレスタイヤ（¥2,000）</label>
+          </fieldset>
+
+          <fieldset class="option-group">
+            <legend>乗り捨て</legend>
+            <label class="option-check"><input type="radio" name="option_dropOff" value="none" checked> 乗り捨てなし</label>
+            <label class="option-check"><input type="radio" name="option_dropOff" value="fukueAirport"> 福江空港（¥500）</label>
+            <label class="option-check"><input type="radio" name="option_dropOff" value="fukuePort"> 福江港（¥500）</label>
+            <label class="option-check"><input type="radio" name="option_dropOff" value="otherDistance"> その他（10kmごと・当日現地で距離計算・事前支払い）（¥0）</label>
+          </fieldset>
+
+          <p id="optionsPricePreview" class="options-price-preview"></p>
+        </div>
+
+        <h3 class="options-section-title full">お客様情報</h3>
+        <label>お名前
+          <input type="text" name="customerName" required>
+        </label>
+        <label>電話番号
+          <div class="phone-input-row">
+            <select name="phoneCountryCode" id="phoneCountryCode" required aria-label="国番号"></select>
+            <input type="tel" name="phone" placeholder="090-1234-5678" required autocomplete="tel-national" inputmode="tel">
+          </div>
+        </label>
+        <label class="full">メールアドレス
+          <input type="email" name="email" required>
+        </label>
+        <label class="full">備考
+          <textarea name="notes" rows="3" placeholder="家族5名で利用予定など"></textarea>
+        </label>
+        <button type="submit" class="full">予約内容の確認</button>
+      </form>
+      <p id="message" class="message"></p>
+    </section>
+  </main>
+
+  <script src="./shared.js"></script>
+  <script src="./car-detail.js"></script>
+</body>
+</html>
