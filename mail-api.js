@@ -4,18 +4,15 @@ async function sendReservationConfirmationEmail(reservation, estimateDocument) {
       ? buildReservationEmailContent(reservation, estimateDocument)
       : null;
 
-  let pdfAttachment = null;
-  if (typeof generateEstimatePdfAttachment === "function") {
-    try {
-      pdfAttachment = await generateEstimatePdfAttachment(estimateDocument);
-    } catch (error) {
-      console.warn("見積書PDFの生成に失敗しました。本文のみ送信します。", error);
-    }
-  }
+  const pdfMeta =
+    typeof buildEstimatePdfMeta === "function"
+      ? buildEstimatePdfMeta(estimateDocument, reservation)
+      : null;
 
   const payloadExtras = {
     ...(emailContent || {}),
-    ...(pdfAttachment || {})
+    ...(pdfMeta ? { pdfMeta } : {}),
+    pdfFilename: `見積書_${estimateDocument?.documentNumber || "estimate"}.pdf`
   };
 
   if (

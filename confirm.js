@@ -331,7 +331,7 @@ confirmSubmitBtnEl.addEventListener("click", async () => {
   confirmSubmitBtnEl.disabled = true;
   confirmSubmitBtnEl.classList.remove("is-disabled");
   confirmSubmitBtnEl.textContent = "メール送信中…";
-  messageEl.textContent = "予約を保存しました。確認メール（見積書PDF付き）を送信しています…";
+  messageEl.textContent = "予約を保存しました。確認メールを送信しています…";
   messageEl.style.color = "#64748b";
 
   let emailSent = false;
