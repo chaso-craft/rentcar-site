@@ -8,11 +8,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
 };
 
+// OTF(CFF)は pdf-lib のサブセットで字形が壊れることがあるため、TTF を使う
 const FONT_URL =
-  "https://cdn.jsdelivr.net/gh/googlefonts/noto-cjk@main/Sans/SubsetOTF/JP/NotoSansJP-Regular.otf";
+  "https://cdn.jsdelivr.net/fontsource/fonts/noto-sans-jp@5.2.5/japanese-400-normal.ttf";
 
 function formatYen(amount) {
-  return `¥${Number(amount || 0).toLocaleString("ja-JP")}`;
+  const n = Number(amount || 0);
+  return `${n.toLocaleString("ja-JP")}円`;
 }
 
 function buildFallbackEmail(reservation, estimateDocument) {
@@ -50,18 +52,18 @@ function buildFallbackEmail(reservation, estimateDocument) {
 
 async function loadJapaneseFontBytes() {
   const cache = globalThis;
-  if (cache.__rentcarNotoJpFont) return cache.__rentcarNotoJpFont;
+  if (cache.__rentcarNotoJpTtf) return cache.__rentcarNotoJpTtf;
   const response = await fetch(FONT_URL);
   if (!response.ok) {
     throw new Error(`日本語フォントの取得に失敗しました（${response.status}）`);
   }
   const bytes = new Uint8Array(await response.arrayBuffer());
-  cache.__rentcarNotoJpFont = bytes;
+  cache.__rentcarNotoJpTtf = bytes;
   return bytes;
 }
 
 function wrapText(font, text, size, maxWidth) {
-  const source = String(text || "");
+  const source = String(text ?? "");
   if (!source) return [""];
   const lines = [];
   let current = "";
@@ -83,76 +85,124 @@ function wrapText(font, text, size, maxWidth) {
   return lines.length ? lines : [""];
 }
 
+function sanitizePdfText(value) {
+  return String(value ?? "")
+    .replace(/\u00a5/g, "円") // ¥
+    .replace(/¥/g, "")
+    .replace(/\u301c/g, "〜") // wave dash variants
+    .replace(/\uff5e/g, "〜");
+}
+
 async function buildEstimatePdfBase64(reservation, estimateDocument, pdfMeta = {}) {
   const company = pdfMeta.company || {};
   const lineItems = Array.isArray(pdfMeta.lineItems) ? pdfMeta.lineItems : [];
   const pdfDoc = await PDFDocument.create();
   pdfDoc.registerFontkit(fontkit);
   const font = await pdfDoc.embedFont(await loadJapaneseFontBytes(), { subset: true });
-  let page = pdfDoc.addPage([595.28, 841.89]);
+
+  const pageWidth = 595.28;
+  const pageHeight = 841.89;
+  let page = pdfDoc.addPage([pageWidth, pageHeight]);
   const marginX = 48;
-  const maxWidth = 595.28 - marginX * 2;
-  let y = 792;
+  const contentWidth = pageWidth - marginX * 2;
+  let y = pageHeight - 56;
   const color = rgb(0.06, 0.09, 0.16);
-  const muted = rgb(0.29, 0.33, 0.41);
+  const muted = rgb(0.35, 0.4, 0.48);
+  const lineGap = 4;
 
   const ensureSpace = (need) => {
     if (y - need < 48) {
-      page = pdfDoc.addPage([595.28, 841.89]);
-      y = 792;
+      page = pdfDoc.addPage([pageWidth, pageHeight]);
+      y = pageHeight - 56;
     }
   };
 
-  const drawLine = (text, size = 10, textColor = color) => {
-    const lines = wrapText(font, text, size, maxWidth);
+  const drawText = (text, size, x, textColor = color) => {
+    const safe = sanitizePdfText(text);
+    const lines = wrapText(font, safe, size, contentWidth - (x - marginX));
     for (const line of lines) {
-      ensureSpace(size + 6);
-      page.drawText(line, { x: marginX, y, size, font, color: textColor });
-      y -= size + 6;
+      ensureSpace(size + lineGap);
+      if (line) {
+        page.drawText(line, { x, y, size, font, color: textColor });
+      }
+      y -= size + lineGap;
     }
   };
 
-  const drawGap = (n = 8) => {
+  const drawGap = (n = 10) => {
     y -= n;
   };
 
-  drawLine(String(company.name || "GOTO rental car"), 14);
-  drawLine(String(company.address || ""), 9, muted);
-  drawLine(`TEL: ${company.phone || ""}`, 9, muted);
-  drawLine(`営業時間: ${company.hours || ""}`, 9, muted);
-  drawGap(10);
-  drawLine("見積書", 18);
-  drawLine(`No. ${estimateDocument?.documentNumber || ""}`, 10);
-  drawLine(`発行日: ${pdfMeta.issuedAtLabel || ""}`, 10);
-  drawGap(14);
+  const drawRule = () => {
+    ensureSpace(12);
+    page.drawLine({
+      start: { x: marginX, y: y + 4 },
+      end: { x: pageWidth - marginX, y: y + 4 },
+      thickness: 1,
+      color: rgb(0.82, 0.86, 0.9)
+    });
+    y -= 12;
+  };
 
-  drawLine("お客様情報", 12);
-  drawLine(`お名前: ${reservation?.customerName || ""}`);
-  drawLine(`電話番号: ${reservation?.phone || ""}`);
-  drawLine(`メール: ${reservation?.email || ""}`);
-  drawGap(12);
+  const drawSection = (title) => {
+    drawGap(6);
+    drawText(title, 12, marginX);
+    drawGap(2);
+  };
 
-  drawLine("ご利用内容", 12);
-  drawLine(`車種: ${pdfMeta.carLabel || reservation?.carType || ""}`);
-  drawLine(`レンタル: ${pdfMeta.startLabel || ""}`);
-  drawLine(`返却: ${pdfMeta.endLabel || ""}`);
-  drawLine(`オプション: ${pdfMeta.optionsLabel || ""}`);
-  drawLine(`お支払い: ${pdfMeta.paymentLabel || ""}`);
-  if (pdfMeta.notes) drawLine(`備考: ${pdfMeta.notes}`);
-  drawGap(12);
+  const drawKV = (label, value) => {
+    const size = 10;
+    const labelWidth = 92;
+    const safeLabel = sanitizePdfText(label);
+    const safeValue = sanitizePdfText(value);
+    const valueLines = wrapText(font, safeValue, size, contentWidth - labelWidth - 8);
+    const blockHeight = Math.max(1, valueLines.length) * (size + lineGap);
+    ensureSpace(blockHeight);
+    page.drawText(safeLabel, { x: marginX, y, size, font, color: muted });
+    let valueY = y;
+    for (const line of valueLines) {
+      if (line) {
+        page.drawText(line, { x: marginX + labelWidth, y: valueY, size, font, color });
+      }
+      valueY -= size + lineGap;
+    }
+    y -= blockHeight;
+  };
 
-  drawLine("料金明細（税込）", 12);
+  drawText(String(company.name || "GOTO rental car"), 16, marginX);
+  drawText(String(company.address || ""), 9, marginX, muted);
+  drawText(`TEL: ${company.phone || ""}`, 9, marginX, muted);
+  drawText(`営業時間: ${company.hours || ""}`, 9, marginX, muted);
+  drawGap(8);
+  drawText("見積書", 20, marginX);
+  drawText(`書類番号: ${estimateDocument?.documentNumber || ""}`, 10, marginX);
+  drawText(`発行日: ${pdfMeta.issuedAtLabel || ""}`, 10, marginX);
+  drawRule();
+
+  drawSection("お客様情報");
+  drawKV("お名前", reservation?.customerName || "");
+  drawKV("電話番号", reservation?.phone || "");
+  drawKV("メール", reservation?.email || "");
+
+  drawSection("ご利用内容");
+  drawKV("車種", pdfMeta.carLabel || reservation?.carType || "");
+  drawKV("レンタル", pdfMeta.startLabel || "");
+  drawKV("返却", pdfMeta.endLabel || "");
+  drawKV("オプション", pdfMeta.optionsLabel || "");
+  drawKV("お支払い", pdfMeta.paymentLabel || "");
+  if (pdfMeta.notes) drawKV("備考", pdfMeta.notes);
+
+  drawSection("料金明細（税込）");
   if (lineItems.length) {
     for (const item of lineItems) {
-      drawLine(`${item.label || ""}  ${formatYen(item.amount)}`);
+      const label = sanitizePdfText(item.label || "").replace(/円/g, "").trim();
+      drawKV(label || "項目", formatYen(item.amount));
     }
-  } else {
-    drawLine(`合計  ${formatYen(estimateDocument?.total ?? reservation?.estimatedTotal)}`);
   }
   drawGap(4);
-  drawLine(`合計（税込）: ${formatYen(estimateDocument?.total ?? reservation?.estimatedTotal)}`, 12);
-  drawGap(14);
-  drawLine("本見積書の有効期限は発行日より30日間とします。", 9, muted);
+  drawText(`合計（税込）: ${formatYen(estimateDocument?.total ?? reservation?.estimatedTotal)}`, 12, marginX);
+  drawGap(12);
+  drawText("本見積書の有効期限は発行日より30日間とします。", 9, marginX, muted);
 
   const bytes = await pdfDoc.save();
   let binary = "";
@@ -200,10 +250,12 @@ Deno.serve(async (req) => {
       String(body?.pdfFilename || "").trim() ||
       `見積書_${estimateDocument?.documentNumber || "estimate"}.pdf`;
 
-    let pdfBase64 = String(body?.pdfBase64 || "").trim();
-    if (!pdfBase64) {
-      pdfBase64 = await buildEstimatePdfBase64(reservation, estimateDocument, body?.pdfMeta || {});
-    }
+    // クライアント生成PDFは使わず、サーバー側で常に作り直す（iPhone対策）
+    const pdfBase64 = await buildEstimatePdfBase64(
+      reservation,
+      estimateDocument,
+      body?.pdfMeta || {}
+    );
 
     const transporter = nodemailer.createTransport({
       service: "gmail",
