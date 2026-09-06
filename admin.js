@@ -948,20 +948,48 @@ if (passwordForm) {
 }
 
 async function bootAdmin() {
+  const onProductionHost = /\.netlify\.app$/i.test(window.location.hostname);
+  let useSupabase = typeof isSupabaseConfigured === "function" && isSupabaseConfigured();
+
+  if (!useSupabase) {
+    const hasUrl = Boolean(window.RENTCAR_SUPABASE_URL);
+    const hasKey = Boolean(window.RENTCAR_SUPABASE_ANON_KEY);
+    const message = !hasUrl || !hasKey
+      ? "Supabase の設定（URL / キー）が空です。supabase-config.js を確認してください。"
+      : "Supabase ライブラリの読み込みに失敗しました。通信環境を確認してください。";
+    if (onProductionHost || hasUrl) {
+      showLoginScreen();
+      if (loginMessage) {
+        loginMessage.textContent = message;
+        loginMessage.style.color = "#dc2626";
+      }
+      alert(message);
+      return;
+    }
+  }
+
   try {
     await ensureDataLoaded();
   } catch (error) {
     console.error(error);
     alert(error.message || "データの読み込みに失敗しました。");
+    if (useSupabase || onProductionHost) {
+      showLoginScreen();
+      return;
+    }
   }
-  const useSupabase = typeof isSupabaseConfigured === "function" && isSupabaseConfigured();
-  if (useSupabase) {
-    const loggedIn = typeof isSupabaseAdminLoggedIn === "function" && (await isSupabaseAdminLoggedIn());
+
+  useSupabase = typeof isSupabaseConfigured === "function" && isSupabaseConfigured();
+  if (useSupabase || onProductionHost) {
+    const loggedIn =
+      typeof isSupabaseAdminLoggedIn === "function" && (await isSupabaseAdminLoggedIn());
     if (!loggedIn) {
       showLoginScreen();
       return;
     }
-    await reloadRemoteData();
+    if (useSupabase) {
+      await reloadRemoteData();
+    }
   }
   showAdminApp();
   renderAdminViews();

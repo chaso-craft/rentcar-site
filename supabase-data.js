@@ -2,14 +2,16 @@
   const knownReservationIds = new Set();
   const knownDocumentIds = new Set();
 
-  function isSupabaseConfigured() {
-    return Boolean(
-      window.RENTCAR_SUPABASE_URL &&
-        window.RENTCAR_SUPABASE_ANON_KEY &&
-        window.supabase &&
-        typeof window.supabase.createClient === "function"
-    );
-  }
+function isSupabaseConfigured() {
+  return Boolean(
+    window.RENTCAR_SUPABASE_URL &&
+      String(window.RENTCAR_SUPABASE_URL).includes("supabase.co") &&
+      window.RENTCAR_SUPABASE_ANON_KEY &&
+      String(window.RENTCAR_SUPABASE_ANON_KEY).length > 20 &&
+      window.supabase &&
+      typeof window.supabase.createClient === "function"
+  );
+}
 
   function getSupabaseClient() {
     if (!isSupabaseConfigured()) return null;
