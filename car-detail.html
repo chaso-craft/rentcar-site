@@ -92,7 +92,10 @@
           </div>
         </label>
         <label class="full">メールアドレス
-          <input type="email" name="email" required>
+          <input type="email" name="email" required autocomplete="email">
+        </label>
+        <label class="full">メールアドレス（確認用）
+          <input type="email" name="emailConfirm" required autocomplete="off" placeholder="確認のためもう一度入力">
         </label>
         <label class="full">備考
           <textarea name="notes" rows="3" placeholder="家族5名で利用予定など"></textarea>

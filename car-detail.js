@@ -76,11 +76,20 @@ function addSummaryRow(label, value) {
   rentalSummaryEl.appendChild(dd);
 }
 
-function isBookingStillAvailable() {
+async function isBookingStillAvailable() {
+  if (typeof isRemoteDataMode === "function" && isRemoteDataMode() && typeof reloadRemoteData === "function") {
+    await reloadRemoteData();
+  }
   const startAt = toReservationDateTime(startDate, startTime, "start");
   const endAt = toReservationDateTime(endDate, endTime, "end");
   const data = loadData();
-  return getAvailableCarTypes(data, startAt, endAt).includes(carType);
+  if (!getAvailableCarTypes(data, startAt, endAt).includes(carType)) {
+    return false;
+  }
+  if (typeof window.assertCarAvailabilityRemote === "function" && isRemoteDataMode()) {
+    return window.assertCarAvailabilityRemote(carType, startAt, endAt);
+  }
+  return true;
 }
 
 function renderCarPhotoGallery() {
@@ -101,7 +110,7 @@ function renderCarPhotoGallery() {
   });
 }
 
-function initPage() {
+async function initPage() {
   if (
     !isValidCarType(carType) ||
     !startDate ||
@@ -116,9 +125,10 @@ function initPage() {
     return;
   }
 
-  if (!isBookingStillAvailable()) {
+  if (!(await isBookingStillAvailable())) {
     carTypeTitleEl.textContent = getCarLabel(carType);
-    carTypeIntroEl.textContent = "申し訳ありません。この車種はご指定の期間ではご予約いただけません。";
+    carTypeIntroEl.textContent =
+      "申し訳ありません。この車種はご指定の期間ではご予約いただけません（他予約の貸出開始1時間前〜返却1時間後は空けてください）。";
     renderCarPhotoGallery();
     rentButtonEl.hidden = true;
     return;
@@ -178,6 +188,8 @@ function restoreEditFormFromPending() {
 
     reservationForm.querySelector('[name="customerName"]').value = pending.customerName || "";
     reservationForm.querySelector('[name="email"]').value = pending.email || "";
+    const emailConfirmInput = reservationForm.querySelector('[name="emailConfirm"]');
+    if (emailConfirmInput) emailConfirmInput.value = pending.email || "";
     reservationForm.querySelector('[name="notes"]').value = pending.notes || "";
 
     const phoneField = reservationForm.querySelector('[name="phone"]');
@@ -197,8 +209,8 @@ function restoreEditFormFromPending() {
   }
 }
 
-rentButtonEl.addEventListener("click", () => {
-  if (!isBookingStillAvailable()) {
+rentButtonEl.addEventListener("click", async () => {
+  if (!(await isBookingStillAvailable())) {
     messageEl.textContent = "この車種はすでに予約が入りました。トップに戻って再度検索してください。";
     messageEl.style.color = "#dc2626";
     return;
@@ -212,7 +224,7 @@ rentButtonEl.addEventListener("click", () => {
 });
 
 reservationForm.addEventListener("change", updateOptionsPricePreview);
-reservationForm.addEventListener("submit", (event) => {
+reservationForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const formData = new FormData(reservationForm);
   const bookingStartDate = formData.get("startDate");
@@ -221,8 +233,21 @@ reservationForm.addEventListener("submit", (event) => {
   const bookingEndTime = formData.get("endTime");
   const bookingCarType = formData.get("carType");
 
-  if (!isBookingStillAvailable()) {
-    messageEl.textContent = `${bookingCarType}は現在空きがありません。`;
+  if (!(await isBookingStillAvailable())) {
+    messageEl.textContent = `${getCarLabel(bookingCarType)}は現在空きがありません（貸出開始1時間前〜返却1時間後は不可）。`;
+    messageEl.style.color = "#dc2626";
+    return;
+  }
+
+  const email = String(formData.get("email") || "").trim();
+  const emailConfirm = String(formData.get("emailConfirm") || "").trim();
+  if (!email || !emailConfirm) {
+    messageEl.textContent = "メールアドレスを入力してください。";
+    messageEl.style.color = "#dc2626";
+    return;
+  }
+  if (email.toLowerCase() !== emailConfirm.toLowerCase()) {
+    messageEl.textContent = "メールアドレスが一致しません。確認用にもう一度入力してください。";
     messageEl.style.color = "#dc2626";
     return;
   }
@@ -239,7 +264,7 @@ reservationForm.addEventListener("submit", (event) => {
       formData.get("phoneCountryCode"),
       formData.get("phone")
     ),
-    email: formData.get("email"),
+    email,
     notes: formData.get("notes") || ""
   };
 

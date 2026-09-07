@@ -129,9 +129,42 @@
     <section id="tab-fleet" class="admin-panel" hidden>
       <section class="card">
         <h2>車両・在庫の管理</h2>
-        <p class="hint-text">在庫台数・紹介文・車両の写真は予約サイトにすぐに反映されます。先頭の写真が代表画像になります。</p>
+        <p class="hint-text">表示名・在庫・紹介文・写真は予約サイトに反映されます。先頭の写真が代表画像になります。</p>
         <form id="fleetForm" class="form-grid"></form>
         <p id="fleetMessage" class="message"></p>
+      </section>
+
+      <section class="card">
+        <h2>新規車両を追加</h2>
+        <p class="hint-text">新しい車種を追加できます。車両コードは半角英数字（例: NBOX）。空欄なら表示名から自動作成します。</p>
+        <form id="addCarForm" class="form-grid">
+          <label>表示名
+            <input type="text" name="newCarName" id="newCarName" placeholder="例: ホンダ N-BOX" required>
+          </label>
+          <label>車両コード（任意）
+            <input type="text" name="newCarId" id="newCarId" placeholder="例: NBOX" pattern="[A-Za-z][A-Za-z0-9_]*" title="半角英字で始め、英数字とアンダースコアのみ">
+          </label>
+          <label>料金区分
+            <select name="newCarPricing" id="newCarPricing" required>
+              <option value="kei">軽自動車</option>
+              <option value="standard" selected>普通車</option>
+            </select>
+          </label>
+          <label>在庫台数
+            <input type="number" name="newCarStock" id="newCarStock" min="0" step="1" value="1" required>
+          </label>
+          <label>乗車定員
+            <input type="number" name="newCarSeats" id="newCarSeats" min="1" step="1" value="4" required>
+          </label>
+          <label>ミッション
+            <input type="text" name="newCarTransmission" id="newCarTransmission" value="AT">
+          </label>
+          <label class="full">紹介文
+            <textarea name="newCarDescription" id="newCarDescription" rows="3" placeholder="予約サイトに表示する紹介文"></textarea>
+          </label>
+          <button type="submit" class="full">車両を追加</button>
+        </form>
+        <p id="addCarMessage" class="message"></p>
       </section>
     </section>
 
@@ -264,6 +297,38 @@
           <button type="button" id="emailTemplateReset" class="secondary full">初期文面に戻す</button>
         </form>
         <p id="emailTemplateMessage" class="message"></p>
+      </section>
+
+      <section class="card">
+        <h2>予約完了画面のメッセージ</h2>
+        <p class="hint-text">予約完了ページに表示する文言を編集できます。空欄のときは初期文面を使います。</p>
+        <p class="hint-text">使える差し込み文字：
+          <code>{{email}}</code>
+          <code>{{shopName}}</code>
+          <code>{{shopPhone}}</code>
+          <code>{{shopAddress}}</code>
+          <code>{{shopHours}}</code>
+        </p>
+        <form id="completeMessageForm" class="form-grid">
+          <label class="full">見出し
+            <input type="text" name="completeTitle" id="completeTitle" placeholder="予約申し込み完了">
+          </label>
+          <label class="full">メール送信成功時のメッセージ
+            <textarea name="completeMessageSuccess" id="completeMessageSuccess" rows="3"></textarea>
+          </label>
+          <label class="full">メール送信失敗時のメッセージ
+            <textarea name="completeMessageFail" id="completeMessageFail" rows="3"></textarea>
+          </label>
+          <label class="full">銀行振込を選んだときの追加メッセージ
+            <textarea name="completeMessageBank" id="completeMessageBank" rows="3"></textarea>
+          </label>
+          <label class="full">Air Pay を選んだときの追加メッセージ
+            <textarea name="completeMessageAirPay" id="completeMessageAirPay" rows="3"></textarea>
+          </label>
+          <button type="submit" class="full">完了メッセージを保存</button>
+          <button type="button" id="completeMessageReset" class="secondary full">初期文面に戻す</button>
+        </form>
+        <p id="completeMessageFormMessage" class="message"></p>
       </section>
 
       <section class="card">

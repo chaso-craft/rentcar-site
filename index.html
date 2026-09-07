@@ -25,6 +25,7 @@
         </button>
         <nav class="site-nav" id="siteNav">
         <a href="#reserve">予約</a>
+        <a href="#availability">空きカレンダー</a>
         <a href="#cars">車種</a>
         <a href="#rates">料金</a>
         <a href="#shop">店舗情報</a>
@@ -65,7 +66,7 @@
             <label>返却時間（9:00〜18:00 / 30分刻み）
               <select name="endTime" id="endTime" required></select>
             </label>
-            <p class="hint-text full same-day-time-note">予約開始は現在時刻の1時間後以降（30分刻み）のみ選べます。営業時間前・後の受け渡しはオプション料金がかかります。</p>
+            <p class="hint-text full same-day-time-note">予約開始は現在時刻の1時間後以降（30分刻み）のみ選べます。営業時間前・後の受け渡しはオプション料金がかかります。また、貸出開始の1時間前から返却の1時間後までは他の予約と重ねられません（ちょうど1時間前の返却も不可）。</p>
             <button type="submit" class="full search-submit">空き状況を見る</button>
           </div>
           <p id="searchMessage" class="message"></p>
@@ -73,11 +74,34 @@
       </div>
     </section>
 
+    <section class="section section-alt" id="availability">
+      <div class="container">
+        <div class="section-header">
+          <h2>空き状況カレンダー</h2>
+          <p class="section-sub">色の帯は予約が入っている時間帯です。日付をタップすると、貸出開始の1時間前〜返却の1時間後まで予約できない時間がわかります（お名前などの個人情報は表示しません）。</p>
+        </div>
+        <div class="public-calendar-card">
+          <div class="toolbar public-calendar-toolbar">
+            <button id="publicPrevMonth" type="button" class="secondary">前月</button>
+            <span id="publicCalendarTitle"></span>
+            <button id="publicNextMonth" type="button" class="secondary">次月</button>
+          </div>
+          <div class="public-calendar-legend" aria-hidden="true">
+            <span class="public-calendar-legend-item"><i class="public-calendar-swatch is-busy"></i>予約あり（前後1時間含む）</span>
+          </div>
+          <div class="calendar-scroll">
+            <div id="publicCalendar" class="calendar-grid public-calendar-grid"></div>
+          </div>
+          <p id="publicCalendarMessage" class="message"></p>
+        </div>
+      </div>
+    </section>
+
     <section class="section" id="results">
       <div class="container">
         <div class="section-header">
           <h2>空いている車種</h2>
-          <p id="carListHint" class="section-sub">日付と時間を選んで検索すると、予約できる車種が表示されます。</p>
+          <p id="carListHint" class="section-sub">日付と時間を選んで検索すると、予約できる車種が表示されます。各予約は貸出開始の1時間前から返却の1時間後まで他の予約と重ねられません。</p>
         </div>
         <div id="carTypeList" class="car-type-grid"></div>
       </div>
@@ -178,6 +202,20 @@
       <a href="./admin.html" class="footer-admin">店舗管理</a>
     </div>
   </footer>
+
+  <div id="publicCalendarModal" class="modal" hidden>
+    <div class="modal-backdrop" data-close-public-calendar></div>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="publicCalendarModalTitle">
+      <div class="modal-header">
+        <h3 id="publicCalendarModalTitle" class="modal-title">この日の予約状況</h3>
+        <button type="button" class="modal-close" data-close-public-calendar aria-label="閉じる">×</button>
+      </div>
+      <div id="publicCalendarModalBody" class="modal-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="secondary" data-close-public-calendar>閉じる</button>
+      </div>
+    </div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./supabase-config.js"></script>

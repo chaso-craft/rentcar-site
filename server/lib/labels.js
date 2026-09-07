@@ -68,17 +68,25 @@ function formatBookingOptionsSummary(doc) {
 
 function formatEndpoint(doc, role) {
   const isStart = role === "start";
-  const dateStr = (isStart ? doc.startAt : doc.endAt)?.split("T")[0] || "";
+  const iso = isStart ? doc.startAt : doc.endAt;
+  const parsed = iso ? new Date(iso) : null;
+  const hasValidDate = parsed && !Number.isNaN(parsed.getTime());
+  const dateStr = hasValidDate
+    ? `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, "0")}-${String(parsed.getDate()).padStart(2, "0")}`
+    : "";
+  const localTime = hasValidDate
+    ? `${String(parsed.getHours()).padStart(2, "0")}:${String(parsed.getMinutes()).padStart(2, "0")}`
+    : "";
   const time = isStart ? doc.startTimeSelection : doc.endTimeSelection;
-  if (!dateStr) return "—";
-  if (time === "before-hours" || doc.startOutsideHours && isStart) {
-    return `${formatDate(`${dateStr}T09:00`)} 営業時間前`;
+  if (!dateStr && !iso) return "—";
+  if (time === "before-hours" || (doc.startOutsideHours && isStart)) {
+    return `${formatDate(hasValidDate ? parsed : `${dateStr}T09:00`)} 営業時間前`;
   }
-  if (time === "after-hours" || doc.endOutsideHours && !isStart) {
-    return `${formatDate(`${dateStr}T18:00`)} 営業時間後`;
+  if (time === "after-hours" || (doc.endOutsideHours && !isStart)) {
+    return `${formatDate(hasValidDate ? parsed : `${dateStr}T18:00`)} 営業時間後`;
   }
-  const clock = time || (isStart ? doc.startAt : doc.endAt)?.split("T")[1]?.substring(0, 5) || "";
-  return `${formatDate(`${dateStr}T${clock || "09:00"}`)} ${clock}`;
+  const clock = (time && /^\d{2}:\d{2}$/.test(time) ? time : "") || localTime || "";
+  return `${formatDate(hasValidDate ? parsed : iso)} ${clock}`.trim();
 }
 
 module.exports = {

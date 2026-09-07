@@ -5,6 +5,7 @@ const ADMIN_SESSION_KEY = "rentcar-admin-session";
 const ADMIN_PASSWORD_KEY = "rentcar-admin-password";
 const DEFAULT_ADMIN_PASSWORD = "admin";
 const CAR_TYPES = ["LIFE", "SOLIO", "ROOMY"];
+const DEFAULT_CAR_TYPES = ["LIFE", "SOLIO", "ROOMY"];
 
 const DEFAULT_SITE = {
   name: "GOTO rental car",
@@ -17,7 +18,12 @@ const DEFAULT_SITE = {
     "五島列島・福江島を拠点に、観光やお仕事での移動をサポートするレンタカーです。空港・港への乗り捨てにも対応しています。",
   icon: "",
   emailSubject: "",
-  emailBody: ""
+  emailBody: "",
+  completeTitle: "",
+  completeMessageSuccess: "",
+  completeMessageFail: "",
+  completeMessageBank: "",
+  completeMessageAirPay: ""
 };
 
 const DEFAULT_EMAIL_TEMPLATE = {
@@ -48,6 +54,15 @@ TEL: {{shopPhone}}
 営業時間: {{shopHours}}`
 };
 
+const DEFAULT_COMPLETE_MESSAGES = {
+  title: "予約申し込み完了",
+  success:
+    "予約内容の確認メールを、ご入力いただいたメールアドレス（{{email}}）にお送りしました。見積書（PDF）を添付しています。",
+  fail: "予約は完了しましたが、確認メールの送信に失敗しました。お手数ですが店舗までご連絡ください。",
+  bank: "お支払い方法に銀行振り込みを選択された方は、メールに記載の銀行口座へお振込みいただき、決済を完了してください。",
+  airPay: "お支払い方法にAir Payを選択された方は、メールに記載のURLより決済を完了してください。"
+};
+
 const DEFAULT_SITE_ICON =
   "data:image/svg+xml," +
   encodeURIComponent(
@@ -65,21 +80,24 @@ const DEFAULT_CATALOG = {
     seats: 4,
     transmission: "AT",
     description: "島の細い道も走りやすい軽自動車。少人数の観光や買い物におすすめです。",
-    images: []
+    images: [],
+    pricingCategory: "kei"
   },
   SOLIO: {
     name: "スズキ ソリオ",
     seats: 5,
     transmission: "AT",
     description: "荷物も人も積みやすいコンパクトカー。ご家族やカップルの移動に便利です。",
-    images: []
+    images: [],
+    pricingCategory: "standard"
   },
   ROOMY: {
     name: "トヨタ ルーミー",
     seats: 5,
     transmission: "AT",
     description: "室内が広く乗り降りしやすいミニバンタイプ。グループでの観光に向いています。",
-    images: []
+    images: [],
+    pricingCategory: "standard"
   }
 };
 
@@ -90,6 +108,7 @@ const DEFAULT_DATA = {
     ROOMY: 1
   },
   catalog: JSON.parse(JSON.stringify(DEFAULT_CATALOG)),
+  carOrder: [...DEFAULT_CAR_TYPES],
   site: { ...DEFAULT_SITE },
   rates: JSON.parse(JSON.stringify(DEFAULT_RATES)),
   reservations: [],
@@ -116,13 +135,110 @@ function createUniqueId(prefix = "id") {
 
 function mergeFleet(savedFleet) {
   const fleet = { ...DEFAULT_DATA.fleet };
-  if (!savedFleet) return fleet;
-  CAR_TYPES.forEach((type) => {
+  if (!savedFleet || typeof savedFleet !== "object") return fleet;
+  Object.keys(savedFleet).forEach((type) => {
+    const id = String(type || "").trim();
+    if (!id) return;
     if (typeof savedFleet[type] === "number" && savedFleet[type] >= 0) {
-      fleet[type] = savedFleet[type];
+      fleet[id] = savedFleet[type];
     }
   });
   return fleet;
+}
+
+const CAR_PRICING_CATEGORY = {
+  LIFE: "kei",
+  SOLIO: "standard",
+  ROOMY: "standard"
+};
+
+function normalizePricingCategory(value, fallbackType = "") {
+  if (value === "kei" || value === "standard") return value;
+  return CAR_PRICING_CATEGORY[fallbackType] || "standard";
+}
+
+function mergeCatalog(savedCatalog) {
+  const catalog = JSON.parse(JSON.stringify(DEFAULT_CATALOG));
+  if (!savedCatalog || typeof savedCatalog !== "object") return catalog;
+  Object.keys(savedCatalog).forEach((type) => {
+    const id = String(type || "").trim();
+    if (!id || !savedCatalog[type] || typeof savedCatalog[type] !== "object") return;
+    const base = catalog[id] || {
+      name: id,
+      seats: 4,
+      transmission: "AT",
+      description: "",
+      images: [],
+      pricingCategory: "standard"
+    };
+    catalog[id] = {
+      ...base,
+      ...savedCatalog[type],
+      name: String(savedCatalog[type].name || base.name || id).trim() || id,
+      seats: Number(savedCatalog[type].seats) > 0 ? Number(savedCatalog[type].seats) : base.seats || 4,
+      transmission: String(savedCatalog[type].transmission || base.transmission || "AT").trim(),
+      description: String(savedCatalog[type].description || base.description || "").trim(),
+      pricingCategory: normalizePricingCategory(
+        savedCatalog[type].pricingCategory ?? base.pricingCategory,
+        id
+      ),
+      images: normalizeCarImages(savedCatalog[type].images)
+    };
+  });
+  return catalog;
+}
+
+function mergeCarOrder(savedOrder, catalog, fleet) {
+  const known = new Set([...Object.keys(catalog || {}), ...Object.keys(fleet || {})]);
+  const order = [];
+  const push = (id) => {
+    const key = String(id || "").trim();
+    if (!key || !known.has(key) || order.includes(key)) return;
+    order.push(key);
+  };
+  if (Array.isArray(savedOrder)) savedOrder.forEach(push);
+  DEFAULT_CAR_TYPES.forEach(push);
+  [...known].sort().forEach(push);
+  return order;
+}
+
+function computeCarTypes(data) {
+  const catalog = data?.catalog || {};
+  const fleet = data?.fleet || {};
+  return mergeCarOrder(data?.carOrder, catalog, fleet);
+}
+
+function refreshCarTypes(data = loadData()) {
+  const next = computeCarTypes(data);
+  CAR_TYPES.splice(0, CAR_TYPES.length, ...next);
+  if (data && Array.isArray(data.carOrder)) {
+    data.carOrder = [...next];
+  }
+  return CAR_TYPES;
+}
+
+function createCarTypeId(displayName, existingIds = []) {
+  const existing = new Set(existingIds.map((id) => String(id).toUpperCase()));
+  const fromName = String(displayName || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 24);
+  let base = fromName || "CAR";
+  if (/^[0-9]/.test(base)) base = `CAR_${base}`;
+  let candidate = base;
+  let n = 2;
+  while (existing.has(candidate)) {
+    candidate = `${base}_${n}`;
+    n += 1;
+  }
+  return candidate;
+}
+
+function getCarPricingCategory(carType) {
+  const entry = getCarCatalogEntry(carType);
+  return normalizePricingCategory(entry.pricingCategory, carType);
 }
 
 function mergeSite(savedSite) {
@@ -133,7 +249,27 @@ function mergeSite(savedSite) {
   }
   site.emailSubject = String(site.emailSubject || "");
   site.emailBody = String(site.emailBody || "");
+  site.completeTitle = String(site.completeTitle || "");
+  site.completeMessageSuccess = String(site.completeMessageSuccess || "");
+  site.completeMessageFail = String(site.completeMessageFail || "");
+  site.completeMessageBank = String(site.completeMessageBank || "");
+  site.completeMessageAirPay = String(site.completeMessageAirPay || "");
+  if (Array.isArray(savedSite?.carOrder)) {
+    site.carOrder = savedSite.carOrder.map((id) => String(id || "").trim()).filter(Boolean);
+  }
   return site;
+}
+
+function getCompletePageMessages() {
+  const site = getCompanyInfo();
+  return {
+    title: String(site.completeTitle || "").trim() || DEFAULT_COMPLETE_MESSAGES.title,
+    success:
+      String(site.completeMessageSuccess || "").trim() || DEFAULT_COMPLETE_MESSAGES.success,
+    fail: String(site.completeMessageFail || "").trim() || DEFAULT_COMPLETE_MESSAGES.fail,
+    bank: String(site.completeMessageBank || "").trim() || DEFAULT_COMPLETE_MESSAGES.bank,
+    airPay: String(site.completeMessageAirPay || "").trim() || DEFAULT_COMPLETE_MESSAGES.airPay
+  };
 }
 
 function getEmailTemplate() {
@@ -154,12 +290,20 @@ function escapeHtml(value) {
 
 function buildEmailPlaceholderMap(reservation, estimateDocument) {
   const company = getCompanyInfo();
+  const startIso = estimateDocument?.startAt || reservation.startAt || "";
+  const endIso = estimateDocument?.endAt || reservation.endAt || "";
+  const startParts = getLocalDateTimeParts(startIso);
+  const endParts = getLocalDateTimeParts(endIso);
   const booking = {
     carType: estimateDocument?.carType || reservation.carType,
-    startDate: (estimateDocument?.startAt || reservation.startAt || "").split("T")[0],
-    endDate: (estimateDocument?.endAt || reservation.endAt || "").split("T")[0],
-    startTime: estimateDocument?.startTimeSelection || reservation.startTimeSelection,
-    endTime: estimateDocument?.endTimeSelection || reservation.endTimeSelection,
+    startDate: startParts.dateStr,
+    endDate: endParts.dateStr,
+    startTime:
+      estimateDocument?.startTimeSelection ||
+      reservation.startTimeSelection ||
+      startParts.timeStr,
+    endTime:
+      estimateDocument?.endTimeSelection || reservation.endTimeSelection || endParts.timeStr,
     options: estimateDocument?.options || reservation.options
   };
   return {
@@ -203,12 +347,20 @@ function buildReservationEmailContent(reservation, estimateDocument) {
 
 function buildEstimatePdfMeta(estimateDocument, reservation = {}) {
   const company = getCompanyInfo();
+  const startIso = estimateDocument?.startAt || reservation.startAt || "";
+  const endIso = estimateDocument?.endAt || reservation.endAt || "";
+  const startParts = getLocalDateTimeParts(startIso);
+  const endParts = getLocalDateTimeParts(endIso);
   const booking = {
     carType: estimateDocument?.carType || reservation.carType,
-    startDate: (estimateDocument?.startAt || reservation.startAt || "").split("T")[0],
-    endDate: (estimateDocument?.endAt || reservation.endAt || "").split("T")[0],
-    startTime: estimateDocument?.startTimeSelection || reservation.startTimeSelection,
-    endTime: estimateDocument?.endTimeSelection || reservation.endTimeSelection,
+    startDate: startParts.dateStr,
+    endDate: endParts.dateStr,
+    startTime:
+      estimateDocument?.startTimeSelection ||
+      reservation.startTimeSelection ||
+      startParts.timeStr,
+    endTime:
+      estimateDocument?.endTimeSelection || reservation.endTimeSelection || endParts.timeStr,
     options: estimateDocument?.options || reservation.options
   };
   const lineItems = (estimateDocument?.breakdown || [])
@@ -233,21 +385,6 @@ function buildEstimatePdfMeta(estimateDocument, reservation = {}) {
     issuedAtLabel: formatDate(estimateDocument?.issuedAt || reservation.createdAt || new Date()),
     lineItems
   };
-}
-
-function mergeCatalog(savedCatalog) {
-  const catalog = JSON.parse(JSON.stringify(DEFAULT_CATALOG));
-  if (!savedCatalog || typeof savedCatalog !== "object") return catalog;
-  CAR_TYPES.forEach((type) => {
-    if (savedCatalog[type] && typeof savedCatalog[type] === "object") {
-      catalog[type] = {
-        ...catalog[type],
-        ...savedCatalog[type],
-        images: normalizeCarImages(savedCatalog[type].images)
-      };
-    }
-  });
-  return catalog;
 }
 
 function mergeRates(savedRates) {
@@ -289,22 +426,31 @@ let dataLoadPromise = null;
 function loadDataFromLocalStorage() {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_DATA));
-    return JSON.parse(JSON.stringify(DEFAULT_DATA));
+    const initial = JSON.parse(JSON.stringify(DEFAULT_DATA));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
+    refreshCarTypes(initial);
+    return initial;
   }
   try {
     const parsed = JSON.parse(raw);
-    return {
-      fleet: mergeFleet(parsed.fleet),
-      catalog: mergeCatalog(parsed.catalog),
+    const catalog = mergeCatalog(parsed.catalog);
+    const fleet = mergeFleet(parsed.fleet);
+    const data = {
+      fleet,
+      catalog,
+      carOrder: mergeCarOrder(parsed.carOrder, catalog, fleet),
       site: mergeSite(parsed.site),
       rates: mergeRates(parsed.rates),
       reservations: Array.isArray(parsed.reservations) ? parsed.reservations : [],
       documents: Array.isArray(parsed.documents) ? parsed.documents : []
     };
+    refreshCarTypes(data);
+    return data;
   } catch (_error) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_DATA));
-    return JSON.parse(JSON.stringify(DEFAULT_DATA));
+    const initial = JSON.parse(JSON.stringify(DEFAULT_DATA));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
+    refreshCarTypes(initial);
+    return initial;
   }
 }
 
@@ -320,13 +466,16 @@ function loadData() {
   if (!dataCache) {
     dataCache = loadDataFromLocalStorage();
   }
+  refreshCarTypes(dataCache);
   return dataCache;
 }
 
-async function saveData(data) {
+async function saveData(data, options = {}) {
+  data.carOrder = mergeCarOrder(data.carOrder, data.catalog, data.fleet);
+  refreshCarTypes(data);
   dataCache = data;
   if (remoteDataMode && typeof window.persistRentcarData === "function") {
-    await window.persistRentcarData(data);
+    await window.persistRentcarData(data, options);
     return;
   }
   saveDataToLocalStorage(data);
@@ -340,6 +489,10 @@ async function ensureDataLoaded() {
     if (configured && typeof window.fetchRentcarData === "function") {
       remoteDataMode = true;
       dataCache = await window.fetchRentcarData();
+      if (!Array.isArray(dataCache.carOrder)) {
+        dataCache.carOrder = mergeCarOrder(null, dataCache.catalog, dataCache.fleet);
+      }
+      refreshCarTypes(dataCache);
       return dataCache;
     }
     remoteDataMode = false;
@@ -428,17 +581,24 @@ function getCarCatalogEntry(carType) {
   if (entry) return entry;
   return {
     name: carType,
-    seats: "",
+    seats: 4,
     transmission: "AT",
     description: "",
-    images: []
+    images: [],
+    pricingCategory: normalizePricingCategory(null, carType)
   };
 }
 
 function getCarVisualClass(carType) {
   if (carType === "LIFE") return "car-life";
   if (carType === "SOLIO") return "car-solio";
-  return "car-roomy";
+  if (carType === "ROOMY") return "car-roomy";
+  const text = String(carType || "");
+  let hash = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    hash = (hash + text.charCodeAt(i) * (i + 1)) % 5;
+  }
+  return `car-custom-${hash}`;
 }
 
 function createCarVisualElement(carType, extraClass = "") {
@@ -556,25 +716,131 @@ function getReservationCountsByType(data) {
   return counts;
 }
 
-function reservationOverlapsPeriod(reservation, startAt, endAt) {
-  if (reservation.status === "キャンセル") return false;
-  const period = getReservationPeriod(reservation);
-  if (!period) return false;
-  const requestStart = new Date(startAt);
-  const requestEnd = new Date(endAt);
-  if (Number.isNaN(requestStart.getTime()) || Number.isNaN(requestEnd.getTime())) return false;
-  return requestStart < period.end && requestEnd > period.start;
+const BOOKING_TURNAROUND_HOURS = 1;
+
+function getReservationBufferMs(options = {}) {
+  const bufferHours =
+    typeof options.bufferHours === "number" ? options.bufferHours : BOOKING_TURNAROUND_HOURS;
+  return Math.max(0, bufferHours) * 60 * 60 * 1000;
 }
 
-function getAvailableCarTypes(data, startAt, endAt) {
-  return CAR_TYPES.filter((type) => {
-    const stock = data.fleet[type] || 0;
-    const overlapping = data.reservations.filter(
-      (reservation) =>
-        reservation.carType === type && reservationOverlapsPeriod(reservation, startAt, endAt)
-    ).length;
-    return overlapping < stock;
+/** 貸出開始の1時間前〜返却の1時間後（境界含む）の予約不可帯 */
+function getReservationBlockedPeriod(reservation, options = {}) {
+  if (reservation.status === "キャンセル") return null;
+  const period = getReservationPeriod(reservation);
+  if (!period) return null;
+  const bufferMs = getReservationBufferMs(options);
+  return {
+    start: new Date(period.start.getTime() - bufferMs),
+    end: new Date(period.end.getTime() + bufferMs),
+    rentalStart: period.start,
+    rentalEnd: period.end
+  };
+}
+
+function reservationOverlapsPeriod(reservation, startAt, endAt, options = {}) {
+  if (reservation.status === "キャンセル") return false;
+  const blocked = getReservationBlockedPeriod(reservation, options);
+  if (!blocked) return false;
+  const requestStart = parseAppDateTime(startAt);
+  const requestEnd = parseAppDateTime(endAt);
+  if (!requestStart || !requestEnd) return false;
+
+  // ちょうど前後1時間の境界も予約不可（例: 次枠の1時間前ちょうどの返却は不可）
+  return requestStart <= blocked.end && requestEnd >= blocked.start;
+}
+
+function reservationBlockedCoversCalendarDay(reservation, cellDate, options = {}) {
+  const blocked = getReservationBlockedPeriod(reservation, options);
+  if (!blocked) return false;
+  const day = startOfLocalDay(cellDate);
+  const from = startOfLocalDay(blocked.start);
+  const to = startOfLocalDay(blocked.end);
+  return day >= from && day <= to;
+}
+
+function getGroupedBlockedReservationsByCarType(reservations, cellDate, options = {}) {
+  const groups = {};
+  (reservations || []).forEach((reservation) => {
+    if (!reservationBlockedCoversCalendarDay(reservation, cellDate, options)) return;
+    if (!groups[reservation.carType]) groups[reservation.carType] = [];
+    groups[reservation.carType].push(reservation);
   });
+  Object.values(groups).forEach((list) => {
+    list.sort((a, b) => {
+      const pa = getReservationPeriod(a);
+      const pb = getReservationPeriod(b);
+      return (pa?.start?.getTime() || 0) - (pb?.start?.getTime() || 0);
+    });
+  });
+  return groups;
+}
+
+function getBlockedCarTypeSegmentClass(carType, cellDate, reservations, options = {}) {
+  const prevDate = new Date(cellDate);
+  prevDate.setDate(prevDate.getDate() - 1);
+  const nextDate = new Date(cellDate);
+  nextDate.setDate(nextDate.getDate() + 1);
+
+  const hasPrev = (reservations || []).some(
+    (reservation) =>
+      reservation.carType === carType &&
+      reservationBlockedCoversCalendarDay(reservation, prevDate, options)
+  );
+  const hasNext = (reservations || []).some(
+    (reservation) =>
+      reservation.carType === carType &&
+      reservationBlockedCoversCalendarDay(reservation, nextDate, options)
+  );
+
+  if (hasPrev && hasNext) return "segment-middle";
+  if (!hasPrev && hasNext) return "segment-start";
+  if (hasPrev && !hasNext) return "segment-end";
+  return "segment-single";
+}
+
+function formatBlockedWindowLabel(blocked) {
+  if (!blocked) return "";
+  const start = `${blocked.start.toLocaleDateString("ja-JP")} ${formatScheduleClock(blocked.start)}`;
+  const end = `${blocked.end.toLocaleDateString("ja-JP")} ${formatScheduleClock(blocked.end)}`;
+  return `${start} 〜 ${end}`;
+}
+
+function getPublicBlockedWindowsForDay(data, dayDate, options = {}) {
+  const windows = [];
+  (data.reservations || []).forEach((reservation) => {
+    if (!reservationBlockedCoversCalendarDay(reservation, dayDate, options)) return;
+    const blocked = getReservationBlockedPeriod(reservation, options);
+    if (!blocked) return;
+    windows.push({
+      carType: reservation.carType,
+      blocked,
+      label: formatBlockedWindowLabel(blocked),
+      rentalLabel: `${formatDateTime(blocked.rentalStart)} 〜 ${formatDateTime(blocked.rentalEnd)}`
+    });
+  });
+  windows.sort((a, b) => {
+    if (a.carType !== b.carType) return a.carType.localeCompare(b.carType);
+    return a.blocked.start.getTime() - b.blocked.start.getTime();
+  });
+  return windows;
+}
+
+function countOverlappingReservations(data, carType, startAt, endAt, options = {}) {
+  return (data.reservations || []).filter(
+    (reservation) =>
+      reservation.carType === carType && reservationOverlapsPeriod(reservation, startAt, endAt, options)
+  ).length;
+}
+
+function isCarTypeAvailable(data, carType, startAt, endAt, options = {}) {
+  const stock = Number(data.fleet?.[carType]) || 0;
+  if (stock <= 0) return false;
+  return countOverlappingReservations(data, carType, startAt, endAt, options) < stock;
+}
+
+function getAvailableCarTypes(data, startAt, endAt, options = {}) {
+  return CAR_TYPES.filter((type) => isCarTypeAvailable(data, type, startAt, endAt, options));
 }
 
 function isValidCarType(carType) {
@@ -875,12 +1141,6 @@ function applyBookingOptionsToForm(form, options) {
   if (dropOffInput) dropOffInput.checked = true;
 }
 
-const CAR_PRICING_CATEGORY = {
-  LIFE: "kei",
-  SOLIO: "standard",
-  ROOMY: "standard"
-};
-
 const CAR_CATEGORY_LABEL = {
   kei: "軽自動車",
   standard: "普通車"
@@ -977,6 +1237,47 @@ function formatTimeSelectionLabel(timeStr, role) {
   return timeStr;
 }
 
+function parseAppDateTime(value) {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+  const raw = String(value || "").trim();
+  if (!raw) return null;
+
+  // タイムゾーンなし（例: 2026-09-22T09:00）はローカル時刻として扱う
+  const localMatch = raw.match(
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?$/
+  );
+  if (localMatch) {
+    const year = Number(localMatch[1]);
+    const month = Number(localMatch[2]);
+    const day = Number(localMatch[3]);
+    const hour = Number(localMatch[4]);
+    const minute = Number(localMatch[5]);
+    const second = Number(localMatch[6] || 0);
+    const date = new Date(year, month - 1, day, hour, minute, second, 0);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  const date = new Date(raw);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+/** ISO（UTC含む）をローカルの日付・時刻文字列に分解する */
+function getLocalDateTimeParts(value) {
+  const date = parseAppDateTime(value);
+  if (!date) return { dateStr: "", timeStr: "", date: null };
+  return {
+    dateStr: `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`,
+    timeStr: `${pad2(date.getHours())}:${pad2(date.getMinutes())}`,
+    date
+  };
+}
+
+function isClockTimeSelection(value) {
+  return /^\d{2}:\d{2}$/.test(String(value || "").trim());
+}
+
 function toPricingDateTime(dateStr, timeStr, role) {
   const normalized = normalizeTimeSelection(timeStr, role);
   if (normalized === BEFORE_HOURS_VALUE) {
@@ -986,6 +1287,13 @@ function toPricingDateTime(dateStr, timeStr, role) {
     return `${dateStr}T${BUSINESS_CLOSE_TIME}`;
   }
   return `${dateStr}T${timeStr}`;
+}
+
+function toReservationDateTime(dateStr, timeStr, role) {
+  const localStamp = toPricingDateTime(dateStr, timeStr, role);
+  const parsed = parseAppDateTime(localStamp);
+  if (!parsed) return localStamp;
+  return parsed.toISOString();
 }
 
 function hasOutsideBusinessOption(booking) {
@@ -1022,14 +1330,14 @@ function getReservationTimeSelection(reservation, role) {
     return role === "start" ? BEFORE_HOURS_VALUE : AFTER_HOURS_VALUE;
   }
   const iso = role === "start" ? reservation.startAt : reservation.endAt;
-  return iso?.split("T")[1]?.substring(0, 5) || "";
+  return getLocalDateTimeParts(iso).timeStr;
 }
 
 function calculateRentalPrice(booking) {
   const startAt = toPricingDateTime(booking.startDate, booking.startTime, "start");
   const endAt = toPricingDateTime(booking.endDate, booking.endTime, "end");
   const hours = getRentalDurationHours(startAt, endAt);
-  const category = CAR_PRICING_CATEGORY[booking.carType] || "standard";
+  const category = getCarPricingCategory(booking.carType);
   const { base, breakdown } = calculateBaseRentalPrice(category, hours);
 
   const fullBreakdown = [
@@ -1208,10 +1516,6 @@ function fillTimeSelect(selectEl) {
   selectEl.innerHTML = `${html}<option value="${BEFORE_HOURS_VALUE}">営業時間前</option><option value="${AFTER_HOURS_VALUE}">営業時間後</option>`;
 }
 
-function toReservationDateTime(dateStr, timeStr, role) {
-  return toPricingDateTime(dateStr, timeStr, role);
-}
-
 function isValidReservationPeriod(startDate, startTime, endDate, endTime) {
   if (!isStartDateTimeBookable(startDate, startTime)) {
     return false;
@@ -1219,9 +1523,9 @@ function isValidReservationPeriod(startDate, startTime, endDate, endTime) {
   if (!isEndTimeAllowed(startDate, startTime, endDate, endTime)) {
     return false;
   }
-  const startAt = toPricingDateTime(startDate, startTime, "start");
-  const endAt = toPricingDateTime(endDate, endTime, "end");
-  return new Date(startAt) < new Date(endAt);
+  const startAt = parseAppDateTime(toPricingDateTime(startDate, startTime, "start"));
+  const endAt = parseAppDateTime(toPricingDateTime(endDate, endTime, "end"));
+  return Boolean(startAt && endAt && startAt < endAt);
 }
 
 function isEndTimeAllowed(startDate, startTime, endDate, endTime) {
@@ -1258,15 +1562,14 @@ function applySameDayEndTimeRestrictions(endSelectEl, startDate, startTime, endD
 
 function formatReservationEndpointText(reservation, role) {
   const isStart = role === "start";
-  const dateStr = (isStart ? reservation.startAt : reservation.endAt)?.split("T")[0];
+  const iso = isStart ? reservation.startAt : reservation.endAt;
+  const { dateStr, timeStr: localTime } = getLocalDateTimeParts(iso);
   const timeSelection = getReservationTimeSelection(reservation, role);
   if (dateStr && isOutsideBusinessOption(timeSelection)) {
     return formatBookingEndpointLabel(dateStr, timeSelection, role);
   }
-  const iso = isStart ? reservation.startAt : reservation.endAt;
-  const datePart = formatDate(iso);
-  const timeStr = iso?.split("T")[1]?.substring(0, 5) || "";
-  return `${datePart} ${timeStr}`.trim();
+  const timeStr = isClockTimeSelection(timeSelection) ? timeSelection : localTime;
+  return `${formatDate(iso)} ${timeStr}`.trim();
 }
 
 function formatReservationPeriodText(reservation) {
@@ -1281,17 +1584,16 @@ function formatReservationPeriodHtml(reservation) {
 
 function formatReservationEndpointHtml(reservation, role) {
   const isStart = role === "start";
-  const dateStr = (isStart ? reservation.startAt : reservation.endAt)?.split("T")[0];
+  const iso = isStart ? reservation.startAt : reservation.endAt;
+  const { dateStr, timeStr: localTime } = getLocalDateTimeParts(iso);
   const timeSelection = getReservationTimeSelection(reservation, role);
   if (dateStr && isOutsideBusinessOption(timeSelection)) {
     const label = formatTimeSelectionLabel(timeSelection, role);
     const tag = isStart ? `営業時間外レンタル（${label}）` : `営業時間外返却（${label}）`;
     return `${formatDate(toPricingDateTime(dateStr, timeSelection, role))} <span class="outside-hours-tag">${tag}</span>`;
   }
-  const iso = isStart ? reservation.startAt : reservation.endAt;
-  const datePart = formatDate(iso);
-  const timeStr = iso?.split("T")[1]?.substring(0, 5) || "";
-  return `${datePart} ${timeStr}`.trim();
+  const timeStr = isClockTimeSelection(timeSelection) ? timeSelection : localTime;
+  return `${formatDate(iso)} ${timeStr}`.trim();
 }
 
 const PHONE_COUNTRY_CODES = [
@@ -1398,9 +1700,9 @@ function getReservationPeriod(reservation) {
   const startRaw = reservation.startAt ?? reservation.startDate;
   const endRaw = reservation.endAt ?? reservation.endDate;
   if (!startRaw || !endRaw) return null;
-  const start = new Date(startRaw);
-  const end = new Date(endRaw);
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
+  const start = parseAppDateTime(startRaw);
+  const end = parseAppDateTime(endRaw);
+  if (!start || !end) return null;
   return { start, end };
 }
 
@@ -1415,18 +1717,18 @@ function reservationCoversCalendarDay(reservation, cellDate) {
 }
 
 function reservationToBooking(reservation) {
-  const startDate = reservation.startAt?.split("T")[0] || "";
-  const endDate = reservation.endAt?.split("T")[0] || "";
+  const startParts = getLocalDateTimeParts(reservation.startAt);
+  const endParts = getLocalDateTimeParts(reservation.endAt);
   let startTime = reservation.startTimeSelection;
   let endTime = reservation.endTimeSelection;
   if (!startTime && reservation.startOutsideHours) startTime = BEFORE_HOURS_VALUE;
   if (!endTime && reservation.endOutsideHours) endTime = AFTER_HOURS_VALUE;
-  if (!startTime) startTime = reservation.startAt?.split("T")[1]?.substring(0, 5) || BUSINESS_OPEN_TIME;
-  if (!endTime) endTime = reservation.endAt?.split("T")[1]?.substring(0, 5) || BUSINESS_CLOSE_TIME;
+  if (!startTime) startTime = startParts.timeStr || BUSINESS_OPEN_TIME;
+  if (!endTime) endTime = endParts.timeStr || BUSINESS_CLOSE_TIME;
   return {
     carType: reservation.carType,
-    startDate,
-    endDate,
+    startDate: startParts.dateStr,
+    endDate: endParts.dateStr,
     startTime,
     endTime,
     options: reservation.options || getDefaultBookingOptions()
@@ -1555,12 +1857,14 @@ function getDocumentTypeLabel(type) {
 function renderDocumentSheet(container, doc) {
   const isReceipt = doc.type === "receipt";
   const title = getDocumentTypeLabel(doc.type);
+  const startParts = getLocalDateTimeParts(doc.startAt);
+  const endParts = getLocalDateTimeParts(doc.endAt);
   const booking = {
     carType: doc.carType,
-    startDate: doc.startAt?.split("T")[0],
-    endDate: doc.endAt?.split("T")[0],
-    startTime: doc.startTimeSelection,
-    endTime: doc.endTimeSelection,
+    startDate: startParts.dateStr,
+    endDate: endParts.dateStr,
+    startTime: doc.startTimeSelection || startParts.timeStr,
+    endTime: doc.endTimeSelection || endParts.timeStr,
     options: doc.options
   };
 

@@ -1,5 +1,6 @@
 const completeMessageEl = document.getElementById("completeMessage");
 const backToTopBtnEl = document.getElementById("backToTopBtn");
+const completeTitleEl = document.querySelector(".complete-status h2");
 
 function loadCompletedReservation() {
   const raw = sessionStorage.getItem(COMPLETED_RESERVATION_KEY);
@@ -19,28 +20,33 @@ function appendMessageParagraph(text) {
 
 function renderCompleteMessage(info) {
   completeMessageEl.innerHTML = "";
+  const messages = getCompletePageMessages();
+  const company = getCompanyInfo();
+  const map = {
+    email: info.email || "",
+    shopName: company.name || "",
+    shopPhone: company.phone || "",
+    shopAddress: company.address || "",
+    shopHours: company.hours || ""
+  };
+
+  if (completeTitleEl) {
+    completeTitleEl.textContent = applyEmailPlaceholders(messages.title, map);
+  }
 
   if (info.emailSent) {
-    appendMessageParagraph(
-      `予約内容の確認メールを、ご入力いただいたメールアドレス（${info.email}）にお送りしました。見積書（PDF）を添付しています。`
-    );
+    appendMessageParagraph(applyEmailPlaceholders(messages.success, map));
   } else {
-    appendMessageParagraph(
-      `予約は完了しましたが、確認メールの送信に失敗しました。お手数ですが店舗までご連絡ください。`
-    );
+    appendMessageParagraph(applyEmailPlaceholders(messages.fail, map));
     if (info.emailError) {
       appendMessageParagraph(`（理由: ${info.emailError}）`);
     }
   }
 
   if (info.paymentMethod === "bankTransfer") {
-    appendMessageParagraph(
-      "お支払い方法に銀行振り込みを選択された方は、メールに記載の銀行口座へお振込みいただき、決済を完了してください。"
-    );
+    appendMessageParagraph(applyEmailPlaceholders(messages.bank, map));
   } else if (info.paymentMethod === "airPay") {
-    appendMessageParagraph(
-      "お支払い方法にAir Payを選択された方は、メールに記載のURLより決済を完了してください。"
-    );
+    appendMessageParagraph(applyEmailPlaceholders(messages.airPay, map));
   }
 }
 
@@ -59,4 +65,9 @@ function initPage() {
   });
 }
 
-initPage();
+ensureDataLoaded()
+  .then(() => initPage())
+  .catch((error) => {
+    console.error(error);
+    initPage();
+  });

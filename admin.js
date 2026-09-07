@@ -26,6 +26,8 @@ const dashboardStats = document.getElementById("dashboardStats");
 const unreadList = document.getElementById("unreadList");
 const fleetForm = document.getElementById("fleetForm");
 const fleetMessage = document.getElementById("fleetMessage");
+const addCarForm = document.getElementById("addCarForm");
+const addCarMessage = document.getElementById("addCarMessage");
 const settingsForm = document.getElementById("settingsForm");
 const settingsMessage = document.getElementById("settingsMessage");
 const ratesForm = document.getElementById("ratesForm");
@@ -38,6 +40,9 @@ const siteIconMessage = document.getElementById("siteIconMessage");
 const emailTemplateForm = document.getElementById("emailTemplateForm");
 const emailTemplateMessage = document.getElementById("emailTemplateMessage");
 const emailTemplateReset = document.getElementById("emailTemplateReset");
+const completeMessageForm = document.getElementById("completeMessageForm");
+const completeMessageFormMessage = document.getElementById("completeMessageFormMessage");
+const completeMessageReset = document.getElementById("completeMessageReset");
 const passwordForm = document.getElementById("passwordForm");
 const passwordMessage = document.getElementById("passwordMessage");
 
@@ -96,51 +101,74 @@ function renderDashboard() {
   }
 }
 
+function escapeAttr(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 function renderFleetForm() {
   if (!fleetForm) return;
   const data = loadData();
+  refreshCarTypes(data);
   fleetForm.innerHTML = "";
   CAR_TYPES.forEach((type) => {
     const info = getCarCatalogEntry(type);
     const images = getCarImages(type);
+    const pricing = getCarPricingCategory(type);
     const wrap = document.createElement("div");
-    wrap.className = "card full";
+    wrap.className = "card full fleet-car-card";
+    wrap.dataset.carType = type;
     wrap.innerHTML = `
-      <h3>${type}</h3>
+      <div class="fleet-car-card-header">
+        <h3>${escapeAttr(info.name || type)}</h3>
+        <span class="hint-text">コード: ${escapeAttr(type)}</span>
+      </div>
       <label>表示名
-        <input type="text" name="${type}_name" value="${info.name || type}" required>
+        <input type="text" name="${type}_name" value="${escapeAttr(info.name || type)}" required>
       </label>
       <label>在庫台数
         <input type="number" name="${type}_stock" min="0" step="1" value="${data.fleet[type] || 0}" required>
+      </label>
+      <label>料金区分
+        <select name="${type}_pricingCategory" required>
+          <option value="kei"${pricing === "kei" ? " selected" : ""}>軽自動車</option>
+          <option value="standard"${pricing === "standard" ? " selected" : ""}>普通車</option>
+        </select>
       </label>
       <label>乗車定員
         <input type="number" name="${type}_seats" min="1" step="1" value="${info.seats || 4}" required>
       </label>
       <label>ミッション
-        <input type="text" name="${type}_transmission" value="${info.transmission || "AT"}">
+        <input type="text" name="${type}_transmission" value="${escapeAttr(info.transmission || "AT")}">
       </label>
       <label class="full">紹介文
-        <textarea name="${type}_description" rows="3">${info.description || ""}</textarea>
+        <textarea name="${type}_description" rows="3">${escapeAttr(info.description || "")}</textarea>
       </label>
       <div class="car-images-manager full">
         <p class="hint-text">車両の写真。先頭が予約サイトの代表画像になります。</p>
         <div class="car-images-grid">
           ${images.length === 0 ? `<p class="hint-text">まだ写真はありません。</p>` : images.map((item, index) => `
             <figure class="car-image-item">
-              <img src="${item.dataUrl}" alt="${info.name || type}の写真${index + 1}">
+              <img src="${item.dataUrl}" alt="${escapeAttr(info.name || type)}の写真${index + 1}">
               <figcaption>${index === 0 ? "代表画像" : `写真 ${index + 1}`}</figcaption>
               <div class="car-image-actions">
                 <label class="file-button compact">変更
-                  <input type="file" accept="image/*" data-replace-image="${type}" data-image-id="${item.id}">
+                  <input type="file" accept="image/*" data-replace-image="${escapeAttr(type)}" data-image-id="${escapeAttr(item.id)}">
                 </label>
-                <button type="button" class="danger compact" data-delete-image="${type}" data-image-id="${item.id}">削除</button>
+                <button type="button" class="danger compact" data-delete-image="${escapeAttr(type)}" data-image-id="${escapeAttr(item.id)}">削除</button>
               </div>
             </figure>
           `).join("")}
         </div>
         <label class="file-button">写真を追加
-          <input type="file" accept="image/*" data-add-image="${type}">
+          <input type="file" accept="image/*" data-add-image="${escapeAttr(type)}">
         </label>
+      </div>
+      <div class="full fleet-car-delete-row">
+        <button type="button" class="danger" data-delete-car="${escapeAttr(type)}">この車両を削除</button>
       </div>
     `;
     fleetForm.appendChild(wrap);
@@ -175,6 +203,20 @@ function fillEmailTemplateForm() {
   const bodyInput = document.getElementById("emailBody");
   if (subjectInput) subjectInput.value = template.subject || "";
   if (bodyInput) bodyInput.value = template.body || "";
+}
+
+function fillCompleteMessageForm() {
+  if (!completeMessageForm) return;
+  const messages = getCompletePageMessages();
+  const setValue = (id, value) => {
+    const input = document.getElementById(id);
+    if (input) input.value = value || "";
+  };
+  setValue("completeTitle", messages.title);
+  setValue("completeMessageSuccess", messages.success);
+  setValue("completeMessageFail", messages.fail);
+  setValue("completeMessageBank", messages.bank);
+  setValue("completeMessageAirPay", messages.airPay);
 }
 
 function fillRatesForm() {
@@ -214,15 +256,13 @@ function renderAdminViews() {
   renderFleetForm();
   fillSettingsForm();
   fillEmailTemplateForm();
+  fillCompleteMessageForm();
   fillRatesForm();
   fillSiteIconPreview();
 }
 
 function getCarTypeScheduleClass(carType) {
-  if (carType === "LIFE") return "car-life";
-  if (carType === "SOLIO") return "car-solio";
-  if (carType === "ROOMY") return "car-roomy";
-  return "";
+  return getCarVisualClass(carType);
 }
 
 function renderDayInventory(panel, inventory) {
@@ -233,7 +273,7 @@ function renderDayInventory(panel, inventory) {
     const div = document.createElement("div");
     div.className = `fleet-item ${getCarTypeScheduleClass(carType)}`;
     div.innerHTML = `
-      <strong>${carType}</strong><br>
+      <strong>${getCarLabel(carType)}</strong><br>
       在庫: ${stats.total}台<br>
       最大同時利用: ${stats.peakUsed}台<br>
       空き: ${stats.available}台<br>
@@ -399,10 +439,7 @@ function reservationSortKey(r) {
 }
 
 function getCarTypeClass(carType) {
-  if (carType === "LIFE") return "car-life";
-  if (carType === "SOLIO") return "car-solio";
-  if (carType === "ROOMY") return "car-roomy";
-  return "";
+  return getCarVisualClass(carType);
 }
 
 function getReservationSegmentClass(reservation, cellDate) {
@@ -692,7 +729,19 @@ reservationTableBody.addEventListener("click", async (event) => {
   if (!target.dataset.deleteId) return;
 
   const data = loadData();
-  data.reservations = data.reservations.filter((r) => r.id !== target.dataset.deleteId);
+  const deleteId = target.dataset.deleteId;
+  const reservation = data.reservations.find((r) => r.id === deleteId);
+  const label = reservation
+    ? `${reservation.customerName || "名前未入力"} / ${getCarLabel(reservation.carType)}`
+    : "この予約";
+  if (
+    !window.confirm(
+      `「${label}」を削除します。本当によろしいですか？\nこの操作は取り消せません。`
+    )
+  ) {
+    return;
+  }
+  data.reservations = data.reservations.filter((r) => r.id !== deleteId);
   await saveData(data);
   renderAdminViews();
 });
@@ -762,25 +811,87 @@ if (fleetForm) {
     event.preventDefault();
     const formData = new FormData(fleetForm);
     const data = loadData();
+    refreshCarTypes(data);
     CAR_TYPES.forEach((type) => {
       const stock = Number(formData.get(`${type}_stock`));
       data.fleet[type] = Number.isFinite(stock) && stock >= 0 ? stock : 0;
       const existing = data.catalog[type] || getCarCatalogEntry(type);
       data.catalog[type] = {
         ...existing,
-        name: String(formData.get(`${type}_name`) || type).trim(),
+        name: String(formData.get(`${type}_name`) || type).trim() || type,
         seats: Number(formData.get(`${type}_seats`)) || 4,
         transmission: String(formData.get(`${type}_transmission`) || "AT").trim(),
         description: String(formData.get(`${type}_description`) || "").trim(),
+        pricingCategory: normalizePricingCategory(formData.get(`${type}_pricingCategory`), type),
         images: normalizeCarImages(existing.images)
       };
     });
+    data.carOrder = [...CAR_TYPES];
     try {
-      await saveData(data);
+      await saveData(data, { settingsOnly: true });
       showActionMessage(fleetMessage, "車両情報を保存しました。予約サイトに反映されます。", false);
       renderAdminViews();
     } catch (error) {
       showActionMessage(fleetMessage, error.message || "保存できませんでした。", true);
+    }
+  });
+}
+
+if (addCarForm) {
+  addCarForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formData = new FormData(addCarForm);
+    const displayName = String(formData.get("newCarName") || "").trim();
+    if (!displayName) {
+      showActionMessage(addCarMessage, "表示名を入力してください。", true);
+      return;
+    }
+    const data = loadData();
+    refreshCarTypes(data);
+    const requestedId = String(formData.get("newCarId") || "")
+      .trim()
+      .toUpperCase();
+    let carId = requestedId;
+    if (carId) {
+      if (!/^[A-Z][A-Z0-9_]*$/.test(carId)) {
+        showActionMessage(
+          addCarMessage,
+          "車両コードは半角英字で始め、英数字とアンダースコアのみにしてください。",
+          true
+        );
+        return;
+      }
+      if (data.catalog[carId] || data.fleet[carId] != null) {
+        showActionMessage(addCarMessage, "同じ車両コードがすでにあります。", true);
+        return;
+      }
+    } else {
+      carId = createCarTypeId(displayName, Object.keys(data.catalog || {}));
+    }
+
+    const stock = Number(formData.get("newCarStock"));
+    data.catalog[carId] = {
+      name: displayName,
+      seats: Number(formData.get("newCarSeats")) || 4,
+      transmission: String(formData.get("newCarTransmission") || "AT").trim() || "AT",
+      description: String(formData.get("newCarDescription") || "").trim(),
+      pricingCategory: normalizePricingCategory(formData.get("newCarPricing"), carId),
+      images: []
+    };
+    data.fleet[carId] = Number.isFinite(stock) && stock >= 0 ? stock : 1;
+    data.carOrder = mergeCarOrder([...(data.carOrder || []), carId], data.catalog, data.fleet);
+
+    try {
+      await saveData(data, { settingsOnly: true });
+      addCarForm.reset();
+      document.getElementById("newCarStock").value = "1";
+      document.getElementById("newCarSeats").value = "4";
+      document.getElementById("newCarTransmission").value = "AT";
+      document.getElementById("newCarPricing").value = "standard";
+      showActionMessage(addCarMessage, `「${displayName}」を追加しました。`, false);
+      renderAdminViews();
+    } catch (error) {
+      showActionMessage(addCarMessage, error.message || "追加できませんでした。", true);
     }
   });
 }
@@ -807,7 +918,7 @@ if (fleetPanel) {
         images = images.map((item) => (item.id === input.dataset.imageId ? { ...item, dataUrl } : item));
       }
       data.catalog[type] = { ...entry, images };
-      await saveData(data);
+      await saveData(data, { settingsOnly: true });
       showActionMessage(fleetMessage, addType ? "写真を追加しました。" : "写真を変更しました。", false);
       renderFleetForm();
     } catch (error) {
@@ -817,6 +928,41 @@ if (fleetPanel) {
   });
 
   fleetPanel.addEventListener("click", async (event) => {
+    const deleteCarButton = event.target.closest("[data-delete-car]");
+    if (deleteCarButton) {
+      event.preventDefault();
+      const type = deleteCarButton.dataset.deleteCar;
+      const label = getCarLabel(type);
+      const data = loadData();
+      const activeReservations = (data.reservations || []).filter(
+        (item) => item.carType === type && item.status !== "キャンセル"
+      );
+      if (activeReservations.length > 0) {
+        showActionMessage(
+          fleetMessage,
+          `「${label}」は有効な予約があるため削除できません（${activeReservations.length}件）。`,
+          true
+        );
+        return;
+      }
+      if (!window.confirm(`「${label}」を車両一覧から削除しますか？`)) return;
+      delete data.catalog[type];
+      delete data.fleet[type];
+      data.carOrder = mergeCarOrder(
+        (data.carOrder || []).filter((id) => id !== type),
+        data.catalog,
+        data.fleet
+      );
+      try {
+        await saveData(data, { settingsOnly: true });
+        showActionMessage(fleetMessage, `「${label}」を削除しました。`, false);
+        renderAdminViews();
+      } catch (error) {
+        showActionMessage(fleetMessage, error.message || "削除できませんでした。", true);
+      }
+      return;
+    }
+
     const button = event.target.closest("[data-delete-image]");
     if (!button) return;
     event.preventDefault();
@@ -829,7 +975,7 @@ if (fleetPanel) {
       images: normalizeCarImages(entry.images).filter((item) => item.id !== id)
     };
     try {
-      await saveData(data);
+      await saveData(data, { settingsOnly: true });
       showActionMessage(fleetMessage, "写真を削除しました。", false);
       renderFleetForm();
     } catch (error) {
@@ -863,7 +1009,7 @@ if (ratesForm) {
       }
     };
     try {
-      await saveData(data);
+      await saveData(data, { settingsOnly: true });
       showActionMessage(ratesMessage, "料金を保存しました。予約サイトに反映されます。", false);
     } catch (error) {
       showActionMessage(ratesMessage, error.message || "保存できませんでした。", true);
@@ -879,7 +1025,7 @@ if (siteIconInput) {
       const dataUrl = await fileToCompressedDataUrl(file, 192, "image/png", 0.92);
       const data = loadData();
       data.site = { ...data.site, icon: dataUrl };
-      await saveData(data);
+      await saveData(data, { settingsOnly: true });
       fillSiteIconPreview();
       applySiteBrand();
       showActionMessage(siteIconMessage, "ウェブサイトのアイコンを変更しました。", false);
@@ -895,7 +1041,7 @@ if (siteIconReset) {
     const data = loadData();
     data.site = { ...data.site, icon: "" };
     try {
-      await saveData(data);
+      await saveData(data, { settingsOnly: true });
       fillSiteIconPreview();
       applySiteBrand();
       showActionMessage(siteIconMessage, "初期アイコンに戻しました。", false);
@@ -921,7 +1067,7 @@ if (settingsForm) {
       about: String(formData.get("about") || "").trim()
     };
     try {
-      await saveData(data);
+      await saveData(data, { settingsOnly: true });
       settingsMessage.textContent = "店舗情報を保存しました。";
       settingsMessage.style.color = "#059669";
       applySiteBrand();
@@ -943,7 +1089,7 @@ if (emailTemplateForm) {
       emailBody: String(formData.get("emailBody") || "").trim()
     };
     try {
-      await saveData(data);
+      await saveData(data, { settingsOnly: true });
       fillEmailTemplateForm();
       showActionMessage(emailTemplateMessage, "メール文面を保存しました。次の予約から反映されます。", false);
     } catch (error) {
@@ -954,6 +1100,13 @@ if (emailTemplateForm) {
 
 if (emailTemplateReset) {
   emailTemplateReset.addEventListener("click", async () => {
+    if (
+      !window.confirm(
+        "メール文面を初期文面に戻します。本当によろしいですか？\n編集内容は破棄されます。"
+      )
+    ) {
+      return;
+    }
     const data = loadData();
     data.site = {
       ...data.site,
@@ -961,11 +1114,66 @@ if (emailTemplateReset) {
       emailBody: ""
     };
     try {
-      await saveData(data);
+      await saveData(data, { settingsOnly: true });
       fillEmailTemplateForm();
       showActionMessage(emailTemplateMessage, "初期文面に戻しました。", false);
     } catch (error) {
       showActionMessage(emailTemplateMessage, error.message || "初期化できませんでした。", true);
+    }
+  });
+}
+
+if (completeMessageForm) {
+  completeMessageForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formData = new FormData(completeMessageForm);
+    const data = loadData();
+    data.site = {
+      ...data.site,
+      completeTitle: String(formData.get("completeTitle") || "").trim(),
+      completeMessageSuccess: String(formData.get("completeMessageSuccess") || "").trim(),
+      completeMessageFail: String(formData.get("completeMessageFail") || "").trim(),
+      completeMessageBank: String(formData.get("completeMessageBank") || "").trim(),
+      completeMessageAirPay: String(formData.get("completeMessageAirPay") || "").trim()
+    };
+    try {
+      await saveData(data, { settingsOnly: true });
+      fillCompleteMessageForm();
+      showActionMessage(
+        completeMessageFormMessage,
+        "完了メッセージを保存しました。次の予約完了から反映されます。",
+        false
+      );
+    } catch (error) {
+      showActionMessage(completeMessageFormMessage, error.message || "保存できませんでした。", true);
+    }
+  });
+}
+
+if (completeMessageReset) {
+  completeMessageReset.addEventListener("click", async () => {
+    if (
+      !window.confirm(
+        "予約完了メッセージを初期文面に戻します。本当によろしいですか？\n編集内容は破棄されます。"
+      )
+    ) {
+      return;
+    }
+    const data = loadData();
+    data.site = {
+      ...data.site,
+      completeTitle: "",
+      completeMessageSuccess: "",
+      completeMessageFail: "",
+      completeMessageBank: "",
+      completeMessageAirPay: ""
+    };
+    try {
+      await saveData(data, { settingsOnly: true });
+      fillCompleteMessageForm();
+      showActionMessage(completeMessageFormMessage, "初期文面に戻しました。", false);
+    } catch (error) {
+      showActionMessage(completeMessageFormMessage, error.message || "初期化できませんでした。", true);
     }
   });
 }

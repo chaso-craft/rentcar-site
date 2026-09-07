@@ -44,11 +44,20 @@ function loadPendingBooking() {
   }
 }
 
-function isBookingStillAvailable(booking) {
+async function isBookingStillAvailable(booking) {
+  if (typeof isRemoteDataMode === "function" && isRemoteDataMode() && typeof reloadRemoteData === "function") {
+    await reloadRemoteData();
+  }
   const startAt = toReservationDateTime(booking.startDate, booking.startTime, "start");
   const endAt = toReservationDateTime(booking.endDate, booking.endTime, "end");
   const data = loadData();
-  return getAvailableCarTypes(data, startAt, endAt).includes(booking.carType);
+  if (!getAvailableCarTypes(data, startAt, endAt).includes(booking.carType)) {
+    return false;
+  }
+  if (typeof window.assertCarAvailabilityRemote === "function" && isRemoteDataMode()) {
+    return window.assertCarAvailabilityRemote(booking.carType, startAt, endAt);
+  }
+  return true;
 }
 
 function buildEditUrl(booking) {
@@ -180,7 +189,7 @@ function restorePaymentMethodSelection() {
   });
 }
 
-function initPage() {
+async function initPage() {
   pendingBooking = loadPendingBooking();
 
   if (
@@ -198,8 +207,9 @@ function initPage() {
     return;
   }
 
-  if (!isBookingStillAvailable(pendingBooking)) {
-    messageEl.textContent = "申し訳ありません。選択された車種は現在ご予約いただけません。";
+  if (!(await isBookingStillAvailable(pendingBooking))) {
+    messageEl.textContent =
+      "申し訳ありません。選択された車種は現在ご予約いただけません（貸出開始1時間前〜返却1時間後は不可）。";
     messageEl.style.color = "#dc2626";
     confirmSubmitBtnEl.disabled = true;
     termsAgreeBtnEl.disabled = true;
@@ -280,20 +290,61 @@ confirmSubmitBtnEl.addEventListener("click", async () => {
     return;
   }
 
-  if (!isBookingStillAvailable(pendingBooking)) {
-    messageEl.textContent = `${pendingBooking.carType}は現在空きがありません。`;
+  if (!(await isBookingStillAvailable(pendingBooking))) {
+    messageEl.textContent = `${getCarLabel(pendingBooking.carType)}は現在空きがありません（貸出開始1時間前〜返却1時間後は不可）。`;
     messageEl.style.color = "#dc2626";
     return;
   }
 
   const priceResult = calculateRentalPrice(pendingBooking);
   const confirmed = window.confirm(
-    `予約を確定します。\n\n車種：${getCarLabel(pendingBooking.carType)}\n合計：${formatYen(priceResult.total)}（税込）\nお支払い：${formatPaymentMethodLabel(selectedPaymentMethod)}\n\n内容にお間違いがなければ「OK」を押してください。`
+    `予約を確定します。\n\n車種：${getCarLabel(pendingBooking.carType)}\n合計：${formatYen(priceResult.total)}（税込）\nお支払い：${formatPaymentMethodLabel(selectedPaymentMethod)}\n\n※貸出開始の1時間前から返却の1時間後までは、他の予約と間隔を空けています（ちょうど1時間前の返却も不可）。\n\n内容にお間違いがなければ「OK」を押してください。`
   );
   if (!confirmed) return;
 
   const previousLabel = confirmSubmitBtnEl.textContent;
+  confirmSubmitBtnEl.disabled = true;
+  confirmSubmitBtnEl.classList.remove("is-disabled");
+  confirmSubmitBtnEl.textContent = "空き確認中…";
+  messageEl.textContent = "最新の空き状況を確認しています…";
+  messageEl.style.color = "#64748b";
+
   try {
+  if (!(await isBookingStillAvailable(pendingBooking))) {
+    confirmSubmitBtnEl.textContent = previousLabel || "予約を確定する";
+    confirmSubmitBtnEl.disabled = false;
+    updateSubmitButtonState();
+    messageEl.textContent = `${getCarLabel(pendingBooking.carType)}は現在空きがありません（貸出開始1時間前〜返却1時間後は不可）。別の時間をお選びください。`;
+    messageEl.style.color = "#dc2626";
+    return;
+  }
+
+  if (
+    typeof window.assertCarAvailabilityRemote === "function" &&
+    typeof isRemoteDataMode === "function" &&
+    isRemoteDataMode()
+  ) {
+    const startAtCheck = toReservationDateTime(
+      pendingBooking.startDate,
+      pendingBooking.startTime,
+      "start"
+    );
+    const endAtCheck = toReservationDateTime(pendingBooking.endDate, pendingBooking.endTime, "end");
+    const remoteOk = await window.assertCarAvailabilityRemote(
+      pendingBooking.carType,
+      startAtCheck,
+      endAtCheck
+    );
+    if (!remoteOk) {
+      confirmSubmitBtnEl.textContent = previousLabel || "予約を確定する";
+      confirmSubmitBtnEl.disabled = false;
+      updateSubmitButtonState();
+      messageEl.textContent = `${getCarLabel(pendingBooking.carType)}は現在空きがありません（貸出開始1時間前〜返却1時間後は不可）。別の時間をお選びください。`;
+      messageEl.style.color = "#dc2626";
+      return;
+    }
+  }
+
   const startOutsideHours = isOutsideBusinessOption(pendingBooking.startTime);
   const endOutsideHours = isOutsideBusinessOption(pendingBooking.endTime);
   const startAt = toReservationDateTime(pendingBooking.startDate, pendingBooking.startTime, "start");
@@ -328,8 +379,6 @@ confirmSubmitBtnEl.addEventListener("click", async () => {
   const estimateDoc = ensureEstimateDocument(data, newReservation, priceResult);
   await saveData(data);
 
-  confirmSubmitBtnEl.disabled = true;
-  confirmSubmitBtnEl.classList.remove("is-disabled");
   confirmSubmitBtnEl.textContent = "メール送信中…";
   messageEl.textContent = "予約を保存しました。確認メールを送信しています…";
   messageEl.style.color = "#64748b";

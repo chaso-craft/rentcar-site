@@ -95,10 +95,15 @@ function isSupabaseConfigured() {
     };
   }
 
-  function documentToRow(doc) {
+  function documentToRow(doc, validReservationIds) {
+    const reservationId = doc.reservationId || null;
+    const safeReservationId =
+      reservationId && (!validReservationIds || validReservationIds.has(reservationId))
+        ? reservationId
+        : null;
     return {
       id: doc.id,
-      reservation_id: doc.reservationId || null,
+      reservation_id: safeReservationId,
       type: doc.type,
       document_number: doc.documentNumber || "",
       issued_at: doc.issuedAt || new Date().toISOString(),
@@ -110,6 +115,7 @@ function isSupabaseConfigured() {
     return {
       fleet: JSON.parse(JSON.stringify(DEFAULT_DATA.fleet)),
       catalog: JSON.parse(JSON.stringify(DEFAULT_CATALOG)),
+      carOrder: [...DEFAULT_CAR_TYPES],
       site: { ...DEFAULT_SITE },
       rates: JSON.parse(JSON.stringify(DEFAULT_RATES)),
       reservations: [],
@@ -215,10 +221,14 @@ function isSupabaseConfigured() {
     knownDocumentIds.clear();
     documents.forEach((item) => knownDocumentIds.add(item.id));
 
+    const catalog = mergeCatalog(settings?.catalog);
+    const fleet = mergeFleet(settings?.fleet);
+    const site = mergeSite(settings?.site);
     return {
-      fleet: mergeFleet(settings?.fleet),
-      catalog: mergeCatalog(settings?.catalog),
-      site: mergeSite(settings?.site),
+      fleet,
+      catalog,
+      carOrder: mergeCarOrder(site.carOrder, catalog, fleet),
+      site,
       rates: mergeRates(settings?.rates),
       reservations,
       documents
@@ -226,13 +236,14 @@ function isSupabaseConfigured() {
   }
 
   async function upsertSettings(client, data) {
+    const carOrder = mergeCarOrder(data.carOrder, data.catalog, data.fleet);
     const { error } = await client
       .from("app_settings")
       .upsert({
         id: 1,
         fleet: data.fleet,
         catalog: data.catalog,
-        site: data.site,
+        site: { ...data.site, carOrder },
         rates: data.rates,
         updated_at: new Date().toISOString()
       });
@@ -257,7 +268,7 @@ function isSupabaseConfigured() {
     }
   }
 
-  async function persistRentcarData(data) {
+  async function persistRentcarData(data, options = {}) {
     const client = getSupabaseClient();
     if (!client) {
       throw new Error("Supabase が設定されていません。");
@@ -269,26 +280,44 @@ function isSupabaseConfigured() {
 
     if (session) {
       await upsertSettings(client, data);
-      await fullSyncRows(client, "reservations", data.reservations, reservationToRow);
-      await fullSyncRows(client, "documents", data.documents, documentToRow);
+      // 店舗設定・料金・メール文面などは app_settings のみ更新すれば足りる
+      if (options.settingsOnly) {
+        return;
+      }
+
+      const reservationIds = new Set((data.reservations || []).map((item) => item.id));
+      await fullSyncRows(client, "reservations", data.reservations || [], reservationToRow);
+      await fullSyncRows(client, "documents", data.documents || [], (doc) =>
+        documentToRow(doc, reservationIds)
+      );
       knownReservationIds.clear();
-      data.reservations.forEach((item) => knownReservationIds.add(item.id));
+      (data.reservations || []).forEach((item) => knownReservationIds.add(item.id));
       knownDocumentIds.clear();
-      data.documents.forEach((item) => knownDocumentIds.add(item.id));
+      (data.documents || []).forEach((item) => knownDocumentIds.add(item.id));
       return;
     }
 
     const newReservations = data.reservations.filter((item) => !knownReservationIds.has(item.id));
     for (const item of newReservations) {
       if (!item.customerName && !item.email && !item.phone) continue;
+      const available = await assertCarAvailabilityRemote(item.carType, item.startAt, item.endAt);
+      if (!available) {
+        throw new Error(
+          `${item.carType} は指定期間に予約できません（貸出開始1時間前〜返却1時間後は不可）。別の時間を選んでください。`
+        );
+      }
       const { error } = await client.from("reservations").insert(reservationToRow(item));
       if (error) throw error;
       knownReservationIds.add(item.id);
     }
 
+    const reservationIds = new Set([
+      ...knownReservationIds,
+      ...(data.reservations || []).map((item) => item.id)
+    ]);
     const newDocuments = data.documents.filter((item) => !knownDocumentIds.has(item.id));
     for (const item of newDocuments) {
-      const { error } = await client.from("documents").insert(documentToRow(item));
+      const { error } = await client.from("documents").insert(documentToRow(item, reservationIds));
       if (error) throw error;
       knownDocumentIds.add(item.id);
     }
@@ -337,6 +366,37 @@ function isSupabaseConfigured() {
     return data;
   }
 
+  async function assertCarAvailabilityRemote(carType, startAt, endAt, bufferHours = 1) {
+    const fallback = () =>
+      isCarTypeAvailable(loadData(), carType, startAt, endAt, { bufferHours });
+
+    const client = getSupabaseClient();
+    if (!client) return fallback();
+
+    const { data, error } = await client.rpc("is_car_available", {
+      p_car_type: carType,
+      p_start_at: startAt,
+      p_end_at: endAt,
+      p_buffer_hours: bufferHours
+    });
+    if (error) {
+      console.warn("is_car_available RPC:", error.message || error);
+      return fallback();
+    }
+    return Boolean(data);
+  }
+
+  async function filterAvailableCarTypesRemote(types, startAt, endAt, bufferHours = 1) {
+    const list = Array.isArray(types) ? types : [];
+    const available = [];
+    for (const type of list) {
+      // eslint-disable-next-line no-await-in-loop
+      const ok = await assertCarAvailabilityRemote(type, startAt, endAt, bufferHours);
+      if (ok) available.push(type);
+    }
+    return available;
+  }
+
   window.isSupabaseConfigured = isSupabaseConfigured;
   window.getSupabaseClient = getSupabaseClient;
   window.fetchRentcarData = fetchRentcarData;
@@ -345,4 +405,6 @@ function isSupabaseConfigured() {
   window.logoutAdminFromSupabase = logoutAdminFromSupabase;
   window.isSupabaseAdminLoggedIn = isSupabaseAdminLoggedIn;
   window.sendReservationEmailViaSupabase = sendReservationEmailViaSupabase;
+  window.assertCarAvailabilityRemote = assertCarAvailabilityRemote;
+  window.filterAvailableCarTypesRemote = filterAvailableCarTypesRemote;
 })();

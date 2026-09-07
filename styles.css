@@ -13,11 +13,30 @@
   --font: "Noto Sans JP", "Segoe UI", sans-serif;
 }
 
+html {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   font-family: var(--font);
   background: #f6f8fb;
   color: var(--ink);
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+  height: auto;
 }
 
 .public-body {
@@ -41,6 +60,9 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .logo {
@@ -128,6 +150,9 @@ body {
 .hero-inner {
   max-width: 1120px;
   margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .hero-kicker {
@@ -157,6 +182,9 @@ body {
   border-radius: 16px;
   padding: 20px;
   box-shadow: 0 20px 40px rgba(7, 42, 64, 0.25);
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .search-panel-title {
@@ -167,7 +195,7 @@ body {
 .search-grid,
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -196,6 +224,9 @@ button.full:hover {
   padding: 0 20px;
   display: grid;
   gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .section-header h2 {
@@ -210,8 +241,9 @@ button.full:hover {
 
 .fleet-showcase {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
   gap: 16px;
+  min-width: 0;
 }
 
 .fleet-card {
@@ -359,6 +391,23 @@ button.full:hover {
   margin-top: 8px;
 }
 
+.fleet-car-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.fleet-car-card-header h3 {
+  margin: 0;
+}
+
+.fleet-car-delete-row {
+  margin-top: 12px;
+}
+
 .car-images-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -467,6 +516,11 @@ button.compact {
 .car-visual.car-life { background: linear-gradient(135deg, #22c55e, #166534); }
 .car-visual.car-solio { background: linear-gradient(135deg, #3b82f6, #1e3a8a); }
 .car-visual.car-roomy { background: linear-gradient(135deg, #f59e0b, #b45309); }
+.car-visual.car-custom-0 { background: linear-gradient(135deg, #14b8a6, #0f766e); }
+.car-visual.car-custom-1 { background: linear-gradient(135deg, #8b5cf6, #5b21b6); }
+.car-visual.car-custom-2 { background: linear-gradient(135deg, #ef4444, #9f1239); }
+.car-visual.car-custom-3 { background: linear-gradient(135deg, #0ea5e9, #075985); }
+.car-visual.car-custom-4 { background: linear-gradient(135deg, #84cc16, #3f6212); }
 
 .admin-login-wrap {
   min-height: calc(100vh - 72px);
@@ -615,8 +669,9 @@ button.compact {
 
 .car-type-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
   gap: 12px;
+  min-width: 0;
 }
 
 .car-type-card {
@@ -1050,7 +1105,7 @@ button:disabled {
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -1209,6 +1264,9 @@ table {
 .table-scroll {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+  min-width: 0;
+  overscroll-behavior-x: contain;
 }
 
 th,
@@ -1234,8 +1292,11 @@ td {
 
 .calendar-grid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(90px, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 0;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .calendar-weekday {
@@ -1248,6 +1309,7 @@ td {
 
 .calendar-day {
   min-height: 108px;
+  min-width: 0;
   border: 1px solid #dbe2ea;
   border-radius: 0;
   padding: 6px;
@@ -1256,6 +1318,7 @@ td {
   border-top: none;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .calendar-day-number {
@@ -1357,9 +1420,44 @@ button.calendar-reservation.car-roomy {
   color: #92400e;
 }
 
+button.calendar-reservation.car-custom-0 {
+  background: #ccfbf1;
+  border-color: #5eead4;
+  color: #115e59;
+}
+
+button.calendar-reservation.car-custom-1 {
+  background: #ede9fe;
+  border-color: #c4b5fd;
+  color: #5b21b6;
+}
+
+button.calendar-reservation.car-custom-2 {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #9f1239;
+}
+
+button.calendar-reservation.car-custom-3 {
+  background: #e0f2fe;
+  border-color: #7dd3fc;
+  color: #075985;
+}
+
+button.calendar-reservation.car-custom-4 {
+  background: #ecfccb;
+  border-color: #bef264;
+  color: #3f6212;
+}
+
 button.calendar-reservation.car-life.segment-middle:not(.has-start-name),
 button.calendar-reservation.car-solio.segment-middle:not(.has-start-name),
-button.calendar-reservation.car-roomy.segment-middle:not(.has-start-name) {
+button.calendar-reservation.car-roomy.segment-middle:not(.has-start-name),
+button.calendar-reservation.car-custom-0.segment-middle:not(.has-start-name),
+button.calendar-reservation.car-custom-1.segment-middle:not(.has-start-name),
+button.calendar-reservation.car-custom-2.segment-middle:not(.has-start-name),
+button.calendar-reservation.car-custom-3.segment-middle:not(.has-start-name),
+button.calendar-reservation.car-custom-4.segment-middle:not(.has-start-name) {
   color: transparent;
 }
 
@@ -1625,8 +1723,18 @@ button.secondary:hover {
   background: #fffbeb;
 }
 
+.day-inventory-grid .fleet-item.car-custom-0 { border-color: #5eead4; background: #f0fdfa; }
+.day-inventory-grid .fleet-item.car-custom-1 { border-color: #c4b5fd; background: #f5f3ff; }
+.day-inventory-grid .fleet-item.car-custom-2 { border-color: #fca5a5; background: #fef2f2; }
+.day-inventory-grid .fleet-item.car-custom-3 { border-color: #7dd3fc; background: #f0f9ff; }
+.day-inventory-grid .fleet-item.car-custom-4 { border-color: #bef264; background: #f7fee7; }
+
 .schedule-board {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+  min-width: 0;
+  overscroll-behavior-x: contain;
 }
 
 .schedule-track-wrap {
@@ -1661,6 +1769,12 @@ button.secondary:hover {
 .schedule-row-label.car-roomy {
   color: #92400e;
 }
+
+.schedule-row-label.car-custom-0 { color: #0f766e; }
+.schedule-row-label.car-custom-1 { color: #5b21b6; }
+.schedule-row-label.car-custom-2 { color: #9f1239; }
+.schedule-row-label.car-custom-3 { color: #075985; }
+.schedule-row-label.car-custom-4 { color: #3f6212; }
 
 .schedule-axis-spacer {
   font-size: 0.75rem;
@@ -1746,6 +1860,12 @@ button.secondary:hover {
   color: #fff;
   border: 1px solid #b45309;
 }
+
+.schedule-block.car-custom-0 { background: #14b8a6; color: #fff; border: 1px solid #0f766e; }
+.schedule-block.car-custom-1 { background: #8b5cf6; color: #fff; border: 1px solid #5b21b6; }
+.schedule-block.car-custom-2 { background: #ef4444; color: #fff; border: 1px solid #9f1239; }
+.schedule-block.car-custom-3 { background: #0ea5e9; color: #fff; border: 1px solid #075985; }
+.schedule-block.car-custom-4 { background: #84cc16; color: #fff; border: 1px solid #3f6212; }
 
 .schedule-row + .schedule-row {
   margin-top: 8px;
@@ -2102,7 +2222,7 @@ button.secondary:hover {
   }
 
   .calendar-grid {
-    grid-template-columns: repeat(7, minmax(44px, 1fr));
+    grid-template-columns: repeat(7, minmax(0, 1fr));
   }
 
   .calendar-day {
@@ -2224,34 +2344,42 @@ textarea {
 input[type="date"] {
   min-height: 48px;
   width: 100%;
+  max-width: 100%;
   font-size: 16px;
   appearance: auto;
   -webkit-appearance: auto;
   color-scheme: light;
+  box-sizing: border-box;
 }
 
 .date-picker-row {
-  display: grid !important;
+  display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
   align-items: stretch;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .date-picker-row > .native-date-input {
-  display: block !important;
-  position: static !important;
+  display: block;
+  position: static;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   min-height: 48px;
-  opacity: 1 !important;
-  pointer-events: auto !important;
+  opacity: 1;
+  pointer-events: auto;
+  box-sizing: border-box;
 }
 
 .date-display-input {
-  display: none !important;
+  display: none;
 }
 
 .date-picker-btn {
-  display: inline-flex !important;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 48px;
@@ -2262,6 +2390,24 @@ input[type="date"] {
 
 .date-touch-hint {
   display: block;
+}
+
+/* スマホ幅では日付ボタンを隠し、標準の日付入力だけを全幅表示 */
+@media (max-width: 860px) {
+  .date-picker-row {
+    display: block;
+    grid-template-columns: 1fr;
+  }
+
+  .date-picker-btn,
+  .date-display-input {
+    display: none !important;
+  }
+
+  .date-picker-row > .native-date-input {
+    display: block !important;
+    width: 100%;
+  }
 }
 
 .nav-toggle {
@@ -2303,6 +2449,9 @@ button:active,
   -webkit-overflow-scrolling: touch;
   margin: 0 -4px;
   padding-bottom: 8px;
+  max-width: 100%;
+  min-width: 0;
+  overscroll-behavior-x: contain;
 }
 
 .admin-tabs {
@@ -2437,7 +2586,31 @@ button:active,
   }
 
   .calendar-grid {
-    min-width: 560px;
+    min-width: 0;
+    width: 100%;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+
+  .calendar-day {
+    min-height: 84px;
+    padding: 3px 2px;
+  }
+
+  .calendar-day-number {
+    font-size: 0.75rem;
+  }
+
+  .calendar-day-bar-row {
+    flex: 0 0 16px;
+    min-height: 16px;
+    height: 16px;
+  }
+
+  button.calendar-reservation {
+    min-height: 14px;
+    height: 14px;
+    font-size: 0.55rem;
+    padding: 0 2px;
   }
 
   .schedule-track-wrap {
@@ -2450,6 +2623,23 @@ button:active,
 
   .rates-table {
     min-width: 560px;
+  }
+
+  .public-calendar-card {
+    padding: 12px;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .hero-inner,
+  .header-inner,
+  .search-panel,
+  .page-main,
+  main {
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
   }
 
   button.full,
@@ -2479,7 +2669,48 @@ button:active,
   }
 
   .calendar-day {
-    min-height: 96px;
+    min-height: 68px;
+    padding: 2px 1px;
+  }
+
+  .calendar-day-number {
+    font-size: 0.7rem;
+    margin-bottom: 2px;
+  }
+
+  .calendar-weekday {
+    font-size: 0.7rem;
+    padding: 4px 0;
+  }
+
+  .calendar-day-bars {
+    gap: 1px;
+  }
+
+  .calendar-day-bar-row {
+    flex: 0 0 12px;
+    min-height: 12px;
+    height: 12px;
+  }
+
+  button.calendar-reservation {
+    min-height: 11px;
+    height: 11px;
+    font-size: 0.5rem;
+    padding: 0 1px;
+  }
+
+  .public-calendar-grid button.calendar-reservation.has-start-name {
+    font-size: 0.5rem;
+  }
+
+  .search-panel,
+  .public-calendar-card {
+    border-radius: 12px;
+  }
+
+  .logo-sub {
+    display: none;
   }
 }
 
@@ -2515,6 +2746,151 @@ button:active,
 
   .admin-tab.is-active:hover {
     background: #0b3d5c;
+  }
+}
+
+/* 予約サイト：空き状況カレンダー */
+.public-calendar-card {
+  background: #fff;
+  border: 1px solid #dbe2ea;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.public-calendar-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.public-calendar-toolbar span {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.public-calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+.public-calendar-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.public-calendar-swatch {
+  width: 18px;
+  height: 10px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.public-calendar-swatch.is-busy {
+  background: linear-gradient(90deg, #0e7490, #22d3ee);
+}
+
+.public-calendar-grid .calendar-day {
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.public-calendar-grid .calendar-day:hover,
+.public-calendar-grid .calendar-day:focus-visible {
+  background: #f8fafc;
+  box-shadow: inset 0 0 0 2px #94a3b8;
+  outline: none;
+}
+
+.public-calendar-grid .calendar-day.is-today {
+  background: #f0f9ff;
+}
+
+.public-calendar-grid .calendar-day.has-busy {
+  background: #fff7ed;
+}
+
+.public-calendar-grid .calendar-day.blank {
+  cursor: default;
+  pointer-events: none;
+}
+
+.public-calendar-grid button.calendar-reservation {
+  pointer-events: none;
+  font-size: 0.68rem;
+  letter-spacing: 0;
+  cursor: default;
+}
+
+.public-day-busy-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.public-day-busy-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #f8fafc;
+}
+
+.public-day-busy-item strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #0f172a;
+}
+
+.public-day-busy-item p {
+  margin: 0;
+  color: #334155;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+.public-day-busy-note {
+  margin-top: 8px !important;
+  color: #b45309 !important;
+  font-size: 0.88rem !important;
+}
+
+.public-day-empty {
+  margin: 0;
+  color: #64748b;
+}
+
+@media (max-width: 720px) {
+  .public-calendar-card {
+    padding: 12px;
+  }
+
+  .public-calendar-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .public-calendar-toolbar span {
+    order: -1;
+    width: 100%;
+    text-align: center;
   }
 }
 
