@@ -3096,4 +3096,102 @@ button:active,
   }
 }
 
+/* スマホ：予約一覧・書類一覧をカード型にして潰さない */
+@media (max-width: 860px) {
+  .reservations-table-wrap::before,
+  #adminApp .reservations-table-wrap::before,
+  .table-scroll:has(.document-results-table)::before {
+    display: none !important;
+    content: none !important;
+  }
+
+  .reservations-table-wrap,
+  .table-scroll:has(.document-results-table) {
+    overflow: visible !important;
+    margin: 0 !important;
+  }
+
+  #adminApp .reservations-table,
+  .document-results-table {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    border-collapse: separate;
+    border-spacing: 0 12px;
+  }
+
+  #adminApp .reservations-table thead,
+  .document-results-table thead {
+    display: none;
+  }
+
+  #adminApp .reservations-table tbody,
+  .document-results-table tbody,
+  #adminApp .reservations-table tr,
+  .document-results-table tr,
+  #adminApp .reservations-table td,
+  .document-results-table td {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  #adminApp .reservations-table tr,
+  .document-results-table tr {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin: 0;
+  }
+
+  #adminApp .reservations-table tr.unread-row {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+  }
+
+  #adminApp .reservations-table td,
+  .document-results-table td {
+    display: grid !important;
+    grid-template-columns: 6.5rem minmax(0, 1fr);
+    gap: 8px 12px;
+    align-items: start;
+    padding: 8px 0 !important;
+    border-bottom: 1px solid #e2e8f0;
+    white-space: normal !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+    font-size: 0.9rem !important;
+  }
+
+  #adminApp .reservations-table td:last-child,
+  .document-results-table td:last-child {
+    border-bottom: none;
+  }
+
+  #adminApp .reservations-table td::before,
+  .document-results-table td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    color: #64748b;
+    font-size: 0.8rem;
+    line-height: 1.4;
+  }
+
+  #adminApp .reservations-table select,
+  #adminApp .reservations-table button,
+  .document-results-table select,
+  .document-results-table button {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  #adminApp .reservations-table .payment-status-select,
+  #adminApp .reservations-table .status-select {
+    min-width: 0;
+  }
+}
+
 

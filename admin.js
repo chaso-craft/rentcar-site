@@ -399,31 +399,31 @@ function renderReservations() {
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${formatDate(item.createdAt)}</td>
-      <td>${item.customerName}</td>
-      <td>${getCarLabel(item.carType)}</td>
-      <td>${periodText}</td>
-      <td>${item.phone}<br>${item.email}</td>
-      <td>${formatPaymentMethodLabel(item.paymentMethod)}</td>
-      <td>
+      <td data-label="受付日時">${formatDate(item.createdAt)}</td>
+      <td data-label="名前">${escapeHtml(item.customerName || "")}</td>
+      <td data-label="車種">${escapeHtml(getCarLabel(item.carType))}</td>
+      <td data-label="期間">${periodText}</td>
+      <td data-label="連絡先">${escapeHtml(item.phone || "")}<br>${escapeHtml(item.email || "")}</td>
+      <td data-label="支払方法">${escapeHtml(formatPaymentMethodLabel(item.paymentMethod))}</td>
+      <td data-label="支払状況">
         <select class="payment-status-select" data-id="${item.id}">
           <option value="unpaid" ${!isPaymentPaid(item) ? "selected" : ""}>未払い</option>
           <option value="paid" ${isPaymentPaid(item) ? "selected" : ""}>支払い済み</option>
         </select>
       </td>
-      <td>
+      <td data-label="未読/既読">
         <button type="button" data-read-id="${item.id}">
           ${item.isRead ? "既読" : "未読"}
         </button>
       </td>
-      <td>
+      <td data-label="状態">
         <select class="status-select" data-id="${item.id}">
           <option value="受付" ${item.status === "受付" ? "selected" : ""}>受付</option>
           <option value="確定" ${item.status === "確定" ? "selected" : ""}>確定</option>
           <option value="キャンセル" ${item.status === "キャンセル" ? "selected" : ""}>キャンセル</option>
         </select>
       </td>
-      <td><button type="button" data-delete-id="${item.id}" class="danger">削除</button></td>
+      <td data-label="操作"><button type="button" data-delete-id="${item.id}" class="danger">削除</button></td>
     `;
     if (!item.isRead) {
       tr.classList.add("unread-row");

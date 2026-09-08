@@ -48,15 +48,15 @@ function renderResults(documents, query, typeFilter) {
   documents.forEach((doc) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td><span class="doc-type-badge doc-type-${doc.type}">${getDocumentTypeLabel(doc.type)}</span></td>
-      <td>${doc.documentNumber}</td>
-      <td>${formatDate(doc.issuedAt)}</td>
-      <td>${doc.customerName}</td>
-      <td>${doc.phone}</td>
-      <td>${doc.email}</td>
-      <td>${getCarLabel(doc.carType)}</td>
-      <td>${formatYen(doc.total)}</td>
-      <td><button type="button" class="secondary" data-view-doc="${doc.id}">表示</button></td>
+      <td data-label="種類"><span class="doc-type-badge doc-type-${doc.type}">${getDocumentTypeLabel(doc.type)}</span></td>
+      <td data-label="番号">${escapeHtml(doc.documentNumber || "")}</td>
+      <td data-label="発行日">${formatDate(doc.issuedAt)}</td>
+      <td data-label="お名前">${escapeHtml(doc.customerName || "")}</td>
+      <td data-label="電話番号">${escapeHtml(doc.phone || "")}</td>
+      <td data-label="メール">${escapeHtml(doc.email || "")}</td>
+      <td data-label="車種">${escapeHtml(getCarLabel(doc.carType))}</td>
+      <td data-label="合計">${formatYen(doc.total)}</td>
+      <td data-label="操作"><button type="button" class="secondary" data-view-doc="${doc.id}">表示</button></td>
     `;
     documentResultsBodyEl.appendChild(tr);
   });
