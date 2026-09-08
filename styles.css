@@ -276,10 +276,10 @@ button.full:hover {
 }
 
 .rates-table {
-  width: 100%;
+  width: max-content;
+  min-width: 640px;
   border-collapse: collapse;
   background: #fff;
-  min-width: 640px;
 }
 
 .rates-table th,
@@ -287,6 +287,7 @@ button.full:hover {
   border: 1px solid var(--line);
   padding: 12px;
   text-align: left;
+  white-space: nowrap;
 }
 
 .rates-table th {
@@ -1281,6 +1282,20 @@ table {
   overscroll-behavior-x: contain;
 }
 
+.table-scroll > table {
+  width: max-content;
+  min-width: 100%;
+  table-layout: auto;
+}
+
+.table-scroll th,
+.table-scroll td {
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
+  vertical-align: top;
+}
+
 th,
 td {
   border-bottom: 1px solid #e5e7eb;
@@ -1633,6 +1648,12 @@ button.secondary:hover {
   margin: 0;
   padding-left: 18px;
   font-size: 0.85rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.day-list li {
+  margin-bottom: 6px;
 }
 
 .complete-card {
@@ -1907,17 +1928,21 @@ button.secondary:hover {
 }
 
 .document-results-table {
-  width: 100%;
+  width: max-content;
+  min-width: 720px;
   border-collapse: collapse;
 }
 
 .document-results-table th,
 .document-results-table td {
-  padding: 8px;
+  padding: 8px 10px;
   border-bottom: 1px solid #e2e8f0;
   text-align: left;
   font-size: 0.85rem;
   vertical-align: middle;
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
 }
 
 .doc-type-badge {
@@ -2178,14 +2203,32 @@ button.secondary:hover {
     -webkit-overflow-scrolling: touch;
   }
 
-  table {
+  .table-scroll > table {
     min-width: 640px;
+  }
+
+  .table-scroll th,
+  .table-scroll td {
+    white-space: nowrap;
+    word-break: normal;
+    overflow-wrap: normal;
   }
 
   th,
   td {
     font-size: 0.85rem;
     padding: 10px 8px;
+  }
+
+  .terms-table {
+    min-width: 0 !important;
+    width: 100%;
+  }
+
+  .terms-table th,
+  .terms-table td {
+    white-space: normal;
+    word-break: break-word;
   }
 
   .status-select,
@@ -2600,12 +2643,13 @@ button:active,
     padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   }
 
-  #adminApp .card {
+  #adminApp .card,
+  body:not(.public-body) .card {
     padding: 12px;
     max-width: 100%;
     min-width: 0;
     box-sizing: border-box;
-    overflow: hidden;
+    overflow: visible;
   }
 
   #adminApp .card > h2,
@@ -2626,6 +2670,11 @@ button:active,
     padding-right: 4px;
   }
 
+  .admin-tabs::after {
+    content: "";
+    flex: 0 0 12px;
+  }
+
   .admin-tab {
     flex: 0 0 auto;
     white-space: nowrap;
@@ -2642,6 +2691,11 @@ button:active,
   .admin-toolbar-row .danger,
   .admin-toolbar-row button {
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    white-space: normal;
+    line-height: 1.35;
+    text-align: center;
   }
 
   /* 前月 / タイトル / 次月 を1行に */
@@ -2669,8 +2723,11 @@ button:active,
   }
 
   .table-scroll {
-    margin: 0 -4px;
+    margin: 0;
     padding-bottom: 4px;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .table-scroll::before {
@@ -2678,7 +2735,7 @@ button:active,
     display: block;
     font-size: 0.78rem;
     color: #64748b;
-    margin: 0 4px 6px;
+    margin: 0 0 6px;
   }
 
   #adminApp .table-scroll::before {
@@ -2689,15 +2746,42 @@ button:active,
     content: "料金表は左右にスワイプできます";
   }
 
-  #adminApp table {
-    min-width: 720px;
+  /* 表を潰さず横スクロールで読める幅を確保 */
+  #adminApp .table-scroll > table {
+    width: max-content !important;
+    min-width: 1100px !important;
+    table-layout: auto;
   }
 
-  #adminApp th,
-  #adminApp td {
-    font-size: 0.8rem;
-    padding: 8px 6px;
-    word-break: break-word;
+  .document-results-table {
+    width: max-content !important;
+    min-width: 800px !important;
+  }
+
+  .rates-table {
+    width: max-content !important;
+    min-width: 640px !important;
+  }
+
+  #adminApp .table-scroll th,
+  #adminApp .table-scroll td,
+  .document-results-table th,
+  .document-results-table td,
+  .rates-table th,
+  .rates-table td {
+    white-space: nowrap !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    font-size: 0.82rem;
+    padding: 8px 10px;
+  }
+
+  .status-select,
+  .payment-status-select {
+    min-width: 7.5rem;
+    max-width: none;
+    min-height: 44px;
+    font-size: 16px;
   }
 
   .day-schedule-wrap {
