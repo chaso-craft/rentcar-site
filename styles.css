@@ -16,7 +16,7 @@
 html {
   width: 100%;
   max-width: 100%;
-  overflow-x: clip;
+  overflow-x: hidden;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
@@ -28,7 +28,7 @@ body {
   color: var(--ink);
   width: 100%;
   max-width: 100%;
-  overflow-x: clip;
+  overflow-x: hidden;
 }
 
 img,
@@ -1126,58 +1126,44 @@ label {
   color: #334155;
 }
 
-.date-touch-hint {
-  display: none;
-  margin: 4px 0 6px;
-  font-size: 0.85rem;
+/* 日付は全端末でブラウザ標準の date 入力のみ（余計なヒント・ボタンは出さない） */
+.date-touch-hint,
+.date-display-input,
+.date-picker-btn {
+  display: none !important;
 }
 
 .date-picker-row {
   position: relative;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px;
-  align-items: stretch;
-  min-height: 44px;
-}
-
-.date-display-input {
-  background: #f8fafc;
-  color: #334155;
-  min-height: 44px;
+  display: block;
+  min-height: 0;
+  max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
-  cursor: pointer;
 }
 
-.date-picker-btn {
-  white-space: nowrap;
-}
-
-/* Windows PC 向け（当面）: ブラウザ標準の日付入力をそのまま表示 */
-@media (min-width: 701px) {
-  .date-touch-hint,
-  .date-display-input,
-  .date-picker-btn {
-    display: none;
-  }
-
-  .date-picker-row {
-    display: block;
-    min-height: 0;
-  }
-
-  .date-picker-row > .native-date-input {
-    display: block;
-    width: 100%;
-    min-height: 44px;
-    margin: 0;
-    padding: 12px;
-    border: 1px solid #cfd8e3;
-    border-radius: 6px;
-    box-sizing: border-box;
-    background: #fff;
-    color: #334155;
-  }
+.date-picker-row > .native-date-input,
+input[type="date"].native-date-input {
+  display: block !important;
+  position: static !important;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  margin: 0;
+  padding: 12px;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  border: 1px solid #cfd8e3;
+  border-radius: 6px;
+  box-sizing: border-box;
+  background: #fff;
+  color: #334155;
+  font-size: 16px;
+  -webkit-appearance: auto;
+  appearance: auto;
+  color-scheme: light;
+  touch-action: manipulation;
 }
 
 .phone-input-row {
@@ -1318,7 +1304,7 @@ td {
   border-top: none;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .calendar-day-number {
@@ -2135,44 +2121,6 @@ button.secondary:hover {
     font-size: 16px;
   }
 
-  /* スマホ・タブレット（全ページ完成後に本番有効化）: 標準の日付入力を表示 */
-  .date-picker-row {
-    display: block;
-    min-height: 0;
-  }
-
-  .date-picker-row > .native-date-input {
-    position: static;
-    display: block;
-    width: 100%;
-    height: auto;
-    min-height: 48px;
-    margin: 0;
-    padding: 12px;
-    opacity: 1;
-    pointer-events: auto;
-    overflow: visible;
-    clip: auto;
-    border: 1px solid #cfd8e3;
-    border-radius: 6px;
-    background: #fff;
-    color: #334155;
-    font-size: 16px;
-    -webkit-appearance: auto;
-    appearance: auto;
-    box-sizing: border-box;
-    touch-action: manipulation;
-  }
-
-  .date-touch-hint {
-    display: block;
-  }
-
-  .date-display-input,
-  .date-picker-btn {
-    display: none !important;
-  }
-
   .car-type-grid {
     grid-template-columns: 1fr;
   }
@@ -2339,75 +2287,6 @@ select,
 textarea {
   font-size: 16px;
   max-width: 100%;
-}
-
-input[type="date"] {
-  min-height: 48px;
-  width: 100%;
-  max-width: 100%;
-  font-size: 16px;
-  appearance: auto;
-  -webkit-appearance: auto;
-  color-scheme: light;
-  box-sizing: border-box;
-}
-
-.date-picker-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
-  align-items: stretch;
-  max-width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-}
-
-.date-picker-row > .native-date-input {
-  display: block;
-  position: static;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  min-height: 48px;
-  opacity: 1;
-  pointer-events: auto;
-  box-sizing: border-box;
-}
-
-.date-display-input {
-  display: none;
-}
-
-.date-picker-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 48px;
-  min-width: 7.5rem;
-  padding: 12px 14px;
-  white-space: nowrap;
-}
-
-.date-touch-hint {
-  display: block;
-}
-
-/* スマホ幅では日付ボタンを隠し、標準の日付入力だけを全幅表示 */
-@media (max-width: 860px) {
-  .date-picker-row {
-    display: block;
-    grid-template-columns: 1fr;
-  }
-
-  .date-picker-btn,
-  .date-display-input {
-    display: none !important;
-  }
-
-  .date-picker-row > .native-date-input {
-    display: block !important;
-    width: 100%;
-  }
 }
 
 .nav-toggle {
@@ -2591,25 +2470,43 @@ button:active,
     grid-template-columns: repeat(7, minmax(0, 1fr));
   }
 
+  /* 公開カレンダーは画面幅に収める */
+  .public-calendar-grid {
+    min-width: 0;
+  }
+
+  /* 管理カレンダーは枠内スクロールで見切れを防ぐ */
+  .admin-panel .calendar-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+    padding-bottom: 4px;
+  }
+
+  .admin-panel .calendar-grid {
+    min-width: 560px;
+    width: max(100%, 560px);
+  }
+
   .calendar-day {
-    min-height: 84px;
-    padding: 3px 2px;
+    min-height: 88px;
+    padding: 4px 2px;
   }
 
   .calendar-day-number {
-    font-size: 0.75rem;
+    font-size: 0.78rem;
   }
 
   .calendar-day-bar-row {
-    flex: 0 0 16px;
-    min-height: 16px;
-    height: 16px;
+    flex: 0 0 18px;
+    min-height: 18px;
+    height: 18px;
   }
 
   button.calendar-reservation {
-    min-height: 14px;
-    height: 14px;
-    font-size: 0.55rem;
+    min-height: 16px;
+    height: 16px;
+    font-size: 0.58rem;
     padding: 0 2px;
   }
 
@@ -2629,7 +2526,7 @@ button:active,
     padding: 12px;
     max-width: 100%;
     min-width: 0;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .hero-inner,
@@ -2649,6 +2546,169 @@ button:active,
     width: 100%;
     justify-content: center;
   }
+
+  /* —— 管理画面スマホ —— */
+  #adminApp.container,
+  body:not(.public-body) > .container {
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  }
+
+  #adminApp .card {
+    padding: 12px;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  #adminApp .card > h2,
+  #adminApp .admin-toolbar-row h2 {
+    font-size: 1.15rem;
+    word-break: break-word;
+  }
+
+  .admin-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 8px;
+    padding-bottom: 8px;
+    margin: 0 -4px 12px;
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+
+  .admin-tab {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    font-size: 0.88rem;
+    padding: 10px 12px;
+  }
+
+  .admin-toolbar-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .admin-toolbar-row .danger,
+  .admin-toolbar-row button {
+    width: 100%;
+  }
+
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .toolbar button {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  #calendarTitle {
+    flex: 1 1 100%;
+    text-align: center;
+    font-weight: 700;
+  }
+
+  .table-scroll {
+    margin: 0 -4px;
+    padding-bottom: 4px;
+  }
+
+  .table-scroll::before {
+    content: "表は左右にスワイプできます";
+    display: block;
+    font-size: 0.78rem;
+    color: #64748b;
+    margin: 0 4px 6px;
+  }
+
+  #adminApp .table-scroll::before {
+    content: "表は左右にスワイプできます";
+  }
+
+  .public-body .table-scroll::before {
+    content: "料金表は左右にスワイプできます";
+  }
+
+  #adminApp table {
+    min-width: 720px;
+  }
+
+  #adminApp th,
+  #adminApp td {
+    font-size: 0.8rem;
+    padding: 8px 6px;
+    word-break: break-word;
+  }
+
+  .day-schedule-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+  }
+
+  .day-schedule-panel {
+    min-width: 0;
+  }
+
+  .calendar-day-lists {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .stat-card strong {
+    font-size: 1.35rem;
+  }
+
+  .modal-panel {
+    width: calc(100vw - 16px);
+    max-width: calc(100vw - 16px);
+    margin: 8px auto;
+    max-height: min(90vh, 90dvh);
+  }
+
+  .modal-body {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .modal-body dd,
+  .modal-body dt {
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  .login-card {
+    width: min(420px, 100%);
+    padding: 20px 16px;
+  }
+
+  .admin-login-wrap {
+    padding: 16px;
+  }
+
+  #adminApp .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  #adminApp input,
+  #adminApp select,
+  #adminApp textarea {
+    max-width: 100%;
+  }
+
+  .site-nav button,
+  .site-nav .secondary {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 @media (max-width: 480px) {
@@ -2656,52 +2716,40 @@ button:active,
     font-size: 1.55rem;
   }
 
-  .date-picker-row {
-    grid-template-columns: 1fr;
-  }
-
-  .date-picker-btn {
-    width: 100%;
-  }
-
   .stat-grid {
     grid-template-columns: 1fr 1fr;
   }
 
   .calendar-day {
-    min-height: 68px;
-    padding: 2px 1px;
+    min-height: 76px;
+    padding: 3px 2px;
   }
 
   .calendar-day-number {
-    font-size: 0.7rem;
+    font-size: 0.72rem;
     margin-bottom: 2px;
   }
 
   .calendar-weekday {
-    font-size: 0.7rem;
+    font-size: 0.72rem;
     padding: 4px 0;
   }
 
-  .calendar-day-bars {
-    gap: 1px;
+  .public-calendar-grid .calendar-day {
+    min-height: 72px;
   }
 
-  .calendar-day-bar-row {
-    flex: 0 0 12px;
+  .public-calendar-grid .calendar-day-bar-row {
+    flex: 0 0 14px;
+    min-height: 14px;
+    height: 14px;
+  }
+
+  .public-calendar-grid button.calendar-reservation {
     min-height: 12px;
     height: 12px;
-  }
-
-  button.calendar-reservation {
-    min-height: 11px;
-    height: 11px;
-    font-size: 0.5rem;
+    font-size: 0.52rem;
     padding: 0 1px;
-  }
-
-  .public-calendar-grid button.calendar-reservation.has-start-name {
-    font-size: 0.5rem;
   }
 
   .search-panel,
@@ -2709,8 +2757,9 @@ button:active,
     border-radius: 12px;
   }
 
-  .logo-sub {
-    display: none;
+  .section-sub,
+  .hint-text {
+    overflow-wrap: anywhere;
   }
 }
 
@@ -2759,7 +2808,7 @@ button:active,
   max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .public-calendar-toolbar {
