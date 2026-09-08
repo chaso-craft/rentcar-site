@@ -394,15 +394,15 @@ function renderReservations() {
 
   sorted.forEach((item) => {
     const periodText = item.startAt && item.endAt
-      ? formatReservationPeriodHtml(item)
+      ? formatReservationPeriodText(item)
       : `${formatDate(item.startDate)} - ${formatDate(item.endDate)}`;
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td data-label="受付日時">${formatDate(item.createdAt)}</td>
+      <td data-label="受付日時">${escapeHtml(formatDate(item.createdAt))}</td>
       <td data-label="名前">${escapeHtml(item.customerName || "")}</td>
       <td data-label="車種">${escapeHtml(getCarLabel(item.carType))}</td>
-      <td data-label="期間">${periodText}</td>
+      <td data-label="期間">${escapeHtml(periodText)}</td>
       <td data-label="連絡先">${escapeHtml(item.phone || "")}<br>${escapeHtml(item.email || "")}</td>
       <td data-label="支払方法">${escapeHtml(formatPaymentMethodLabel(item.paymentMethod))}</td>
       <td data-label="支払状況">

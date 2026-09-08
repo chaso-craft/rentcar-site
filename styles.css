@@ -2746,8 +2746,8 @@ button:active,
     content: "料金表は左右にスワイプできます";
   }
 
-  /* 表を潰さず横スクロールで読める幅を確保 */
-  #adminApp .table-scroll > table {
+  /* 表を潰さず横スクロールで読める幅を確保（カード化しない表のみ） */
+  #adminApp .table-scroll > table:not(.reservations-table) {
     width: max-content !important;
     min-width: 1100px !important;
     table-layout: auto;
@@ -2763,10 +2763,8 @@ button:active,
     min-width: 640px !important;
   }
 
-  #adminApp .table-scroll th,
-  #adminApp .table-scroll td,
-  .document-results-table th,
-  .document-results-table td,
+  #adminApp .table-scroll > table:not(.reservations-table) th,
+  #adminApp .table-scroll > table:not(.reservations-table) td,
   .rates-table th,
   .rates-table td {
     white-space: nowrap !important;
@@ -3106,44 +3104,54 @@ button:active,
   }
 
   .reservations-table-wrap,
+  #adminApp .reservations-table-wrap,
   .table-scroll:has(.document-results-table) {
-    overflow: visible !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
     margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    min-width: 0 !important;
   }
 
+  /* 横長テーブル用の min-width を打ち消す（これが見切れの主因） */
+  #adminApp .table-scroll > .reservations-table,
   #adminApp .reservations-table,
-  .document-results-table {
+  #adminApp .table-scroll > table.reservations-table,
+  .document-results-table,
+  .table-scroll > .document-results-table {
     width: 100% !important;
     min-width: 0 !important;
     max-width: 100% !important;
-    border-collapse: separate;
-    border-spacing: 0 12px;
+    table-layout: fixed !important;
+    border-collapse: separate !important;
+    border-spacing: 0 12px !important;
   }
 
   #adminApp .reservations-table thead,
   .document-results-table thead {
-    display: none;
+    display: none !important;
   }
 
   #adminApp .reservations-table tbody,
-  .document-results-table tbody,
-  #adminApp .reservations-table tr,
-  .document-results-table tr,
-  #adminApp .reservations-table td,
-  .document-results-table td {
-    display: block;
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
+  .document-results-table tbody {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   #adminApp .reservations-table tr,
   .document-results-table tr {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
     background: #f8fafc;
     border: 1px solid #e2e8f0;
     border-radius: 12px;
-    padding: 10px 12px;
-    margin: 0;
+    padding: 12px !important;
+    margin: 0 0 12px !important;
+    overflow: hidden !important;
   }
 
   #adminApp .reservations-table tr.unread-row {
@@ -3153,44 +3161,71 @@ button:active,
 
   #adminApp .reservations-table td,
   .document-results-table td {
-    display: grid !important;
-    grid-template-columns: 6.5rem minmax(0, 1fr);
-    gap: 8px 12px;
-    align-items: start;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
     padding: 8px 0 !important;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0 !important;
     white-space: normal !important;
     word-break: break-word !important;
     overflow-wrap: anywhere !important;
     font-size: 0.9rem !important;
+    min-width: 0 !important;
   }
 
   #adminApp .reservations-table td:last-child,
   .document-results-table td:last-child {
-    border-bottom: none;
+    border-bottom: none !important;
+    padding-bottom: 0 !important;
   }
 
   #adminApp .reservations-table td::before,
   .document-results-table td::before {
     content: attr(data-label);
+    display: block !important;
     font-weight: 700;
     color: #64748b;
-    font-size: 0.8rem;
-    line-height: 1.4;
+    font-size: 0.78rem;
+    line-height: 1.3;
+    margin-bottom: 4px;
+  }
+
+  #adminApp .reservations-table td > *,
+  .document-results-table td > * {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   #adminApp .reservations-table select,
   #adminApp .reservations-table button,
   .document-results-table select,
   .document-results-table button {
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
   }
 
   #adminApp .reservations-table .payment-status-select,
-  #adminApp .reservations-table .status-select {
-    min-width: 0;
+  #adminApp .reservations-table .status-select,
+  #adminApp .reservations-table .payment-status-select,
+  #adminApp .status-select {
+    min-width: 0 !important;
+  }
+
+  #adminApp .admin-toolbar-row .danger {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    white-space: normal !important;
+  }
+
+  #adminApp #tab-reservations .card,
+  body:not(.public-body) .card {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
   }
 }
 
